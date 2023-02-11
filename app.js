@@ -26,18 +26,20 @@ app.use("/public/uploads", express.static(__dirname + "/public/uploads"));
 const categoriesRoutes = require("./routes/categories");
 const productsRoutes = require("./routes/products");
 const usersRoutes = require("./routes/users");
+const imagesRoutes = require("./routes/image");
 // const ordersRoutes = require("./routes/orders");
 
 const api = process.env.API_URL;
 
-app.use(`${api}/categories`, categoriesRoutes);
+app.use(`${api}/category`, categoriesRoutes);
 app.use(`${api}/products`, productsRoutes);
 app.use(`${api}/user`, usersRoutes);
+app.use(`${api}/image`, imagesRoutes);
 // app.use(`${api}/orders`, ordersRoutes);
 
 
 
- db.sequelize.sync({ alter: true }).then(()=>{
+ db.sequelize.sync({ alter: false, force: false }).then(()=>{
   app.listen(3000,()=>console.log("server running in port 3000"))
 }).catch((error) => {
   console.error('Unable to connect to the database: ', error);

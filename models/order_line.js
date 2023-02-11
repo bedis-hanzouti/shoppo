@@ -7,14 +7,15 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
-            autoIncrement: true
+            autoIncrement: true,
+            allowNull: false,
         },
       
         
-        status: { type: DataTypes.INTEGER, allowNull: false },
+        status: { type: DataTypes.STRING, allowNull: false , defaultValue: "Pending"},
         total: { type: DataTypes.INTEGER, allowNull: false },
         total_discount: { type: DataTypes.INTEGER, allowNull: false },
-        quantity: { type: DataTypes.INTEGER, allowNull: false },
+        quantity: { type: DataTypes.INTEGER, allowNull: false , defaultValue: 0},
         discount: { type: DataTypes.INTEGER, allowNull: false },
         
         
@@ -31,13 +32,17 @@ module.exports = (sequelize, DataTypes) => {
       });
     OrderLine.associate = models => {
         OrderLine.belongsTo(models.Order, {
-            
+            foreignKey: {
+                allowNull: false
+            },
             onDelete: "cascade"
         });
     }
     OrderLine.associate = models => {
         OrderLine.belongsTo(models.Product, {
-            
+            foreignKey: {
+                allowNull: false
+            },
             onDelete: "cascade"
         });
     }

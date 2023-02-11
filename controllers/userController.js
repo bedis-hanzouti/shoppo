@@ -237,6 +237,10 @@ async function getAllStudentPagination(req, res) {
   const offset = req.query.page ? req.query.page * limit : 0;
     await db.User.findAndCountAll(paginate(req.query,req.query))
         .then((obj) => {
+         console.log("hello",typeof obj )
+         Object.entries(obj).map((item)=>{
+            console.log(item)
+         })
             res.status(200).json({
                 status: 'success',
                 message: 'status getted',

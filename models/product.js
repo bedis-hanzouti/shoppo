@@ -7,7 +7,8 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
-            autoIncrement: true
+            autoIncrement: true,
+            allowNull: false,
         },
       
         code: { type: DataTypes.STRING, allowNull: false },
@@ -18,8 +19,8 @@ module.exports = (sequelize, DataTypes) => {
         
         discount: { type: DataTypes.INTEGER, allowNull: false ,defaultValue: 0},
         brand: { type: DataTypes.STRING, allowNull: false },
-        user_id: { type: DataTypes.INTEGER, allowNull: false },
-        url: { type: DataTypes.STRING, allowNull: false },
+        
+        // url: { type: DataTypes.STRING, allowNull: false },
         
        
        
@@ -38,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
       });
     Product.associate = models => {
         Product.belongsToMany(models.Category, {
-            
+            as: 'product',
             through: 'Product_category',
             onDelete: "cascade"
         });
@@ -46,26 +47,43 @@ module.exports = (sequelize, DataTypes) => {
 
     Product.associate = models => {
         Product.belongsToMany(models.Customer, {
-            as: 'Product',
-            through: 'Product_category',
-            onDelete: "cascade"
+            as: 'product',
+            through: 'rating',
+            // onDelete: "cascade"
         });
     }
+
     Product.associate = models => {
         Product.hasMany(models.OrderLine, {
             
             onDelete: "cascade"
         });
     }
+
+    Product.associate = models => {
+        Product.hasMany(models.User, {
+            
+            onDelete: "cascade"
+        });
+    }
+    // Product.associate = models => {
+    //     Product.hasMany(models.Image, {
+            
+    //         onDelete: "cascade"
+    //     });
+    // }
     Product.associate = models => {
         Product.hasMany(models.Image, {
             
             onDelete: "cascade"
         });
     }
+
     Product.associate = models => {
-        Product.hasMany(models.Image, {
-            
+        Product.belongsTo(models.User, {
+            foreignKey: {
+                allowNull: false
+            },
             onDelete: "cascade"
         });
     }

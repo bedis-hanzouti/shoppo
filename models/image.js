@@ -7,13 +7,15 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
-            autoIncrement: true
+            autoIncrement: true,
+            allowNull: false,
         },
       
         
-        alt: { type: DataTypes.INTEGER, allowNull: false },
-        url: { type: DataTypes.INTEGER, allowNull: false },
-        name: { type: DataTypes.INTEGER, allowNull: false },
+        alt: { type: DataTypes.STRING, allowNull: false },
+        url: { type: DataTypes.STRING, allowNull: false },
+        name: { type: DataTypes.STRING, allowNull: false },
+       
         
         
         
@@ -32,7 +34,9 @@ module.exports = (sequelize, DataTypes) => {
     Image.associate = models => {
         Image.belongsTo(models.Product, {
             
-            onDelete: "cascade"
+            foreignKey: {
+                allowNull: false
+            }
         });
     }
     return Image;

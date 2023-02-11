@@ -5,7 +5,8 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
-            autoIncrement: true
+            autoIncrement: true,
+            allowNull: false,
         },
         
       
@@ -26,6 +27,8 @@ module.exports = (sequelize, DataTypes) => {
           activity: { type: DataTypes.STRING, allowNull: false },
           password: { type: DataTypes.STRING, allowNull: false },
           login: { type: DataTypes.STRING, allowNull: false },
+
+          
           
 
           
@@ -39,11 +42,25 @@ module.exports = (sequelize, DataTypes) => {
     
       // If you want to give a custom name to the deletedAt column
       //  deletedAt: 'deletedAt'
+    },{
+      defaultScope: {
+        attributes: {
+          exclude: ['password']
+        }
+      }
     }
+
+    
     
     
     
     );
+    User.associate = models => {
+      User.hasMany(models.Product, {
+          
+          onDelete: "cascade"
+      });
+  }
    
     return User;
 };

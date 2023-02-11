@@ -7,7 +7,8 @@ module.exports = (sequelize, DataTypes) => {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
-            autoIncrement: true
+            autoIncrement: true,
+            allowNull: false,
         },
       
         name: { type: DataTypes.STRING, allowNull: false },
@@ -29,9 +30,9 @@ module.exports = (sequelize, DataTypes) => {
       });
     Category.associate = models => {
         Category.belongsToMany(models.Product, {
-            as: 'Category',
+           // as: 'Category',
             through: 'Product_category',
-            onDelete: "cascade"
+           // onDelete: "cascade"
         });
     }
     return Category;
