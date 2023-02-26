@@ -41,7 +41,12 @@ module.exports = (sequelize, DataTypes) => {
             through: 'rating',
             onDelete: "cascade"
         });
+        Customer.hasMany(models.Order, {
+            
+            onDelete: "cascade"
+        });
     }
+
     Customer.associate = models => {
         Customer.hasMany(models.Order, {
             

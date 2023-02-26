@@ -12,7 +12,7 @@ route.put('/:id',configMedia.uploadOptions.single('image'),productController.upd
 route.put('/update/:id',productController.updateCategoryOfProduct)
 route.get('/',productController.getAllProduct)
 route.get('/:id',productController.getOneProduct)
-route.get('/:idCategory',productController.getAllProductByCategory)
+route.get('/category',productController.getAllProductByCategory)
 route.delete('/:id',productController.deletProduct)
 
 module.exports=route

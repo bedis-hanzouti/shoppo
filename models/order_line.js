@@ -37,6 +37,12 @@ module.exports = (sequelize, DataTypes) => {
             },
             onDelete: "cascade"
         });
+        OrderLine.belongsTo(models.Product, {
+            foreignKey: {
+                allowNull: false
+            },
+            onDelete: "cascade"
+        });
     }
     OrderLine.associate = models => {
         OrderLine.belongsTo(models.Product, {

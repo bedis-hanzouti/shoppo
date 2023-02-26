@@ -1,7 +1,11 @@
+// const { Model, DataTypes, Optional } =require('sequelize')
+// const{sequelize}=require('sequelize')
 
 
+const db = require('../models');
 
-
+const product = require('../models/product');
+const Product_category = require('../models/Product_category'); 
 module.exports = (sequelize, DataTypes) => {
     const Category = sequelize.define('Category', {
         id: {
@@ -28,13 +32,16 @@ module.exports = (sequelize, DataTypes) => {
         // If you want to give a custom name to the deletedAt column
         // deletedAt: 'destroyTime'
       });
+    //   Category.belongsToMany(product, { through: Product_category });
+
     Category.associate = models => {
         Category.belongsToMany(models.Product, {
-           // as: 'Category',
+            as: 'Product',
             through: 'Product_category',
            // onDelete: "cascade"
         });
-    }
+    
+     }
     return Category;
 };
 

@@ -1,114 +1,128 @@
-const db = require('../models');
 const categoryController = require('../controllers/categoryController');
-
 
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const db = require('../models')
 
 
+async function addProductToCategorie(categoryId, productId) {
+    console.log('productId', productId);
+    return await db.Category.findOne({ where: { id: categoryId } })
+        .then(async (cat) => {
+            if (!cat) {
+                console.log('category not found!');
+                return null;
+            }
+            return await db.Product.findOne({ where: { id: productId } }).then(async (prod) => {
+                if (!prod) {
+                    console.log('product not found!');
+                    return null;
+                }
 
-
-   async function addProductToCategorie(categoryId, productId) {
-    console.log("productId",productId);
-      return  await db.Category.findOne({where:{id:categoryId}}) 
-    .then(async(cat) => {
-      if (!cat) {
-        console.log("category not found!");
-        return null;
-      }
-        return await  db.Product.findOne({where:{id:productId}}).then(async(prod) => {
-        if (!prod) {
-          console.log("product not found!");
-          return null;
-        }
-
-          await db.Product_category.create({
-            CategoryId: categoryId,
-           ProductId: productId
-        }).then((obj)=>{
-            console.log("objo",obj);
-            return obj 
-        }).catch((err) => {
-            console.log("hhhhh", err);
-          //   res.status(400).json(err)
-      
-      });
-      });
-    })
-    .catch((err) => {
-      console.log(">> Error while adding Product to Category: ", err);
-    //   res.status(400).json(err)
-
-});
+                await db.Product_category.create({
+                    CategoryId: categoryId,
+                    ProductId: productId
+                })
+                    .then((obj) => {
+                        console.log('objo', obj.toJSON());
+                        return obj;
+                    })
+                    .catch((err) => {
+                        console.log('hhhhh', err);
+                        //   res.status(400).json(err)
+                    });
+            });
+        })
+        .catch((err) => {
+            console.log('>> Error while adding Product to Category: ', err);
+            //   res.status(400).json(err)
+        });
 }
 
+// async function addProduct(req,res){
+//     const user=await db.User.findOne({ where: { id: req.body.UserId } });
+//    categories = req.body.categories;
+//    images = req.body.images;
+//    promises=[]
 
+//    if (user) {
+//        await  db.Product.create({
+//            name: req.body.name,
+//            code: req.body.code,
+//            description: req.body.description,
+//            price: req.body.price,
+//            quantity: req.body.quantity,
 
+//            discount: req.body.discount,
+//            brand: req.body.brand,
+//            UserId: user.id
+//        })
+//        if (categories.length > 0) {
 
+//         await db.product.addCategories(categories.map(tag => tag[0]));
 
+// }
+// else {
+//            res.status(400).json({ error: 'User not found' });
+//        }}
+//     }
 
-
-
-async function addProduct(req, res) {
+ async function addProduct(req, res) {
     //console.log(req.body);
-   try {    const user=await db.User.findOne({ where: { id: req.body.UserId } });
-   categories = req.body.categories;
-   images = req.body.images;
-   promises=[]
+    
+        const user = await  db.User.findOne({ where: { id: req.body.UserId } });
+        categories = req.body.categories;
+        images = req.body.images;
+        let product 
+        let category
+        promises = [];
+    // try {
+        if (user) {
+            const all=Promise.all([])
+          const p= await  db.Product.create({
+                name: req.body.name,
+                code: req.body.code,
+                description: req.body.description,
+                price: req.body.price,
+                quantity: req.body.quantity,
 
-   if (user) {
-       await  db.Product.create({
-           name: req.body.name,
-           code: req.body.code,
-           description: req.body.description,
-           price: req.body.price,
-           quantity: req.body.quantity,
-
-           discount: req.body.discount,
-           brand: req.body.brand,
-           UserId: user.id
-       }).then(async(product) => {
-       // console.log("product",product);
-           if (categories.length > 0) {
-
-               await categories.forEach( async(obj) => {
-               // console.log("objet",obj);
-                   promises.push(addProductToCategorie(obj.id,product.id))
-               })}
-             // console.log("promises",obj);
-             await  Promise.all(promises)
-               .then((elem) => {
-                console.log("eleeemmmmmmmmmm",elem);
-                   res.status(200).json(elem)
-               }).catch((err)=>{
-                   res.status(400).json(err)
-               })
-               
-
-
-       }).catch((errr)=>{
-        res.status(400).json(errr)
-       })
-       
-
-       
-          
-                            
+                discount: req.body.discount,
+                brand: req.body.brand,
+                UserId: user.id
+                
+            }
+            )
+            
+                
+                // console.log(product.toJSON());
+               const c=await db.Category.findAll({raw:true})
+                    
+                
+            
            
-
-         
-     
-         
-   } 
-   else {
-       res.status(400).json({ error: 'User not found' });
-   }}
-   catch(e){
-    res.status(400).json({ error: e });
-   }
- 
+               
+                
+                 await p.addcategory(c);
+                 console.log(await p.countCategories());
+                
+                
+          
+            
+          } else {
+            res.status(400).json({ error: 'User not found' });
+        }
+        // categories.forEach((category) => {
+        //     product.addCategories({
+        //       CategoryId: category.id,
+        //       ProductId: prod.id
+        //     })
+        //     .then((obj)=>{
+        //         console.log(obj);
+        //         res.status(201).json(obj)})
+                
+        // })
+    
 }
-
 
 async function deletProduct(req, res) {
     await db.Product.destroy({ where: { id: req.params.id } })
@@ -122,7 +136,10 @@ async function deletProduct(req, res) {
         .catch((err) => res.status(400).json('Error deleting ' + err));
 }
 async function getOneProduct(req, res) {
-    await db.Product.findOne({ where: { id: req.params.id } })
+    await db.Product.findOne({ where: { id: req.params.id },include:[ {
+        model: db.Category,
+        as:'category'
+    }]} )
         .then((obj) => {
             res.status(200).json({
                 status: 'success',
@@ -136,11 +153,15 @@ async function getOneProduct(req, res) {
 async function getAllProduct(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
-    await db.Product.findAll({include: { model: db.Product_category}})
+    await db.Product.findAll({include:[ {
+        model: db.Image,
+        
+    },{model:db.Category,as:'category'}
+]})
         .then((obj) => {
             res.status(200).json({
                 status: 'success',
-                message: 'status delated',
+                message: 'status geted',
                 data: obj
                 //   user:doc.payload.userN
             });
@@ -151,24 +172,17 @@ async function getAllProduct(req, res) {
 async function getAllProductByCategory(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
-    await db.Product.findAll({
-        limit: 10,
-        offset: 0,
-        include: {
-            model: db.Category,
-            as: 'categories',
-            where: { id: req.params.idCategory }
-        }
+    await db.Product.findAll({raw:true})
+    .then((obj) => {
+        console.log(obj);
+        res.status(200).json({
+            status: 'success',
+            message: 'status geted',
+            data: obj
+            //   user:doc.payload.userN
+        });
     })
-        .then((obj) => {
-            res.status(200).json({
-                status: 'success',
-                message: 'status delated',
-                data: obj
-                //   user:doc.payload.userN
-            });
-        })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+    .catch((err) => res.status(400).json('Error getting ' + err));
 }
 
 async function updateProduct(req, res) {
@@ -213,19 +227,19 @@ async function updateCategoryOfProduct(req, res) {
     if (categories.length > 0) {
         db.Product_category.destroy({ where: { ProductId: req.params.id } })
 
-            .then(async(prod) => {
-              var categoriesProduct=[]
-              
-               await  categories.forEach((category) => {
-                console.log(category);
-                  categoriesProduct.push(
-                    db.Product_category.create({
-                        CategoryId: category.id,
-                        ProductId: prod.id
-                    }))
-                  
-                })
-                res.status(200).send({ res: 'category updated',data:categoriesProduct });
+            .then(async (prod) => {
+                var categoriesProduct = [];
+
+                await categories.forEach((category) => {
+                    console.log(category);
+                    categoriesProduct.push(
+                        db.Product_category.create({
+                            CategoryId: category.id,
+                            ProductId: prod.id
+                        })
+                    );
+                });
+                res.status(200).send({ res: 'category updated', data: categoriesProduct });
             })
             .catch((error) => console.log(error));
     }
@@ -261,12 +275,6 @@ module.exports = {
     deleteCategoryOfProduct
 };
 
-
-
-
-
-
-
 // .then(async(prod) => {
 //     var p=prod
 //     var cat
@@ -276,7 +284,7 @@ module.exports = {
 //                 CategoryId: category.id,
 //                 ProductId: prod.id
 //             })
-//                 .then((obj) => {  
+//                 .then((obj) => {
 //                     cat=obj
 //                    })
 //                 .catch((e) => res.status(400).json({ error: e }));

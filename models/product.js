@@ -1,6 +1,8 @@
 
 
-
+const db = require('../models');
+const category = require('../models/category');
+const Product_category = require('../models/Product_category'); 
 
 module.exports = (sequelize, DataTypes) => {
     const Product = sequelize.define('Product', {
@@ -39,54 +41,75 @@ module.exports = (sequelize, DataTypes) => {
       });
     Product.associate = models => {
         Product.belongsToMany(models.Category, {
-            as: 'product',
+            as: 'category',
             through: 'Product_category',
-            onDelete: "cascade"
+            //onDelete: "cascade"
         });
-    }
-
-    Product.associate = models => {
         Product.belongsToMany(models.Customer, {
-            as: 'product',
+            // as: 'product',
             through: 'rating',
             // onDelete: "cascade"
         });
-    }
-
-    Product.associate = models => {
         Product.hasMany(models.OrderLine, {
             
             onDelete: "cascade"
         });
-    }
-
-    Product.associate = models => {
+        Product.hasMany(models.Image, {
+            
+            onDelete: "cascade"
+        });
         Product.hasMany(models.User, {
             
             onDelete: "cascade"
         });
     }
+    // Product.belongsToMany(category, { through: Product_category });
+
+
+    
+
+    // Product.associate = models => {
+    //     Product.belongsToMany(models.Customer, {
+    //         // as: 'product',
+    //         through: 'rating',
+    //         // onDelete: "cascade"
+    //     });
+    // }
+
+    // Product.associate = models => {
+    //     Product.hasMany(models.OrderLine, {
+            
+    //         onDelete: "cascade"
+    //     });
+    // }
+
+    // Product.associate = models => {
+    //     Product.hasMany(models.User, {
+            
+    //         onDelete: "cascade"
+    //     });
+    // }
     // Product.associate = models => {
     //     Product.hasMany(models.Image, {
             
     //         onDelete: "cascade"
     //     });
     // }
-    Product.associate = models => {
-        Product.hasMany(models.Image, {
+    // Product.associate = models => {
+    //     Product.hasMany(models.Image, {
             
-            onDelete: "cascade"
-        });
-    }
+    //         onDelete: "cascade"
+    //     });
+    // }
 
-    Product.associate = models => {
-        Product.belongsTo(models.User, {
-            foreignKey: {
-                allowNull: false
-            },
-            onDelete: "cascade"
-        });
-    }
+    // Product.associate = models => {
+    //     Product.belongsTo(models.User, {
+    //         foreignKey: {
+    //             allowNull: false
+    //         },
+    //         onDelete: "cascade"
+    //     });
+    // }
     return Product;
 };
 

@@ -5,6 +5,8 @@ const morgan = require("morgan");
 const mongoose = require("mongoose");
 const{Sequelize}=require('sequelize')
 const db=require('./models')
+// db.sequelize = sequelize;
+db.Sequelize = Sequelize;
 
 const logger=require('morgan')
 const cors = require("cors");
@@ -38,6 +40,80 @@ app.use(`${api}/image`, imagesRoutes);
 // app.use(`${api}/orders`, ordersRoutes);
 
 
+// db.Category.belongsToMany(db.Product, {
+//   // as: 'Product',
+//   through: db.Product_category,
+
+//  // onDelete: "cascade"
+// });
+
+// db.Customer.belongsToMany(db.Product, {
+//   through: 'rating',
+//   onDelete: "cascade"
+// });
+// db.Customer.hasMany(db.Order, {
+  
+//   onDelete: "cascade"
+// });
+
+// db.Image.belongsTo(db.Product, {
+            
+//   foreignKey: {
+//       allowNull: false
+//   }
+// });
+
+// db.OrderLine.belongsTo(db.Order, {
+//   foreignKey: {
+//       allowNull: false
+//   },
+//   onDelete: "cascade"
+// });
+// db.OrderLine.belongsTo(db.Product, {
+//   foreignKey: {
+//       allowNull: false
+//   },
+//   onDelete: "cascade"
+// });
+
+// db.Order.belongsTo(db.Customer, {
+//   foreignKey: {
+//       allowNull: false
+//   },
+//   onDelete: "cascade"
+// });
+// db.Order.hasMany(db.OrderLine, {
+  
+//   onDelete: "cascade"
+// });
+
+// db.Product.belongsToMany(db.Category, {
+//   as: 'Category',
+//   through: db.Product_category,
+//   //onDelete: "cascade"
+// });
+// db.Product.belongsToMany(db.Customer, {
+//   // as: 'product',
+//   through: 'rating',
+//   // onDelete: "cascade"
+// });
+// db.Product.hasMany(db.OrderLine, {
+  
+//   onDelete: "cascade"
+// });
+// db.Product.hasMany(db.Image, {
+  
+//   onDelete: "cascade"
+// });
+// db.Product.hasMany(db.User, {
+  
+//   onDelete: "cascade"
+// });
+
+// db.User.hasMany(db.Product, {
+          
+//   onDelete: "cascade"
+// });
 
  db.sequelize.sync({ alter: false, force: false }).then(()=>{
   app.listen(3000,()=>console.log("server running in port 3000"))
