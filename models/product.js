@@ -1,8 +1,8 @@
 
 
 const db = require('../models');
-const category = require('../models/category');
-const Product_category = require('../models/Product_category'); 
+//const category = require('../models/category');
+//const Product_category = require('./n/Product_category'); 
 
 module.exports = (sequelize, DataTypes) => {
     const Product = sequelize.define('Product', {

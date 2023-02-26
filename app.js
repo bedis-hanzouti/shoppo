@@ -115,8 +115,8 @@ app.use(`${api}/image`, imagesRoutes);
 //   onDelete: "cascade"
 // });
 
- db.sequelize.sync({ alter: false, force: false }).then(()=>{
+ db.sequelize.sync({ alter: true, force: false }).then(()=>{
   app.listen(3000,()=>console.log("server running in port 3000"))
 }).catch((error) => {
-  console.error('Unable to connect to the database: ', error);
+  console.error('Unable to connect to the database: ', error.message);
 });

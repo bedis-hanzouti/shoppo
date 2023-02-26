@@ -55,7 +55,7 @@ async function register(req, res) {
                 date: obj
             });
         })
-        .catch((err) => res.status(400).json('Error creating ' + err));
+        .catch((err) => res.status(400).json('Error creating ' + err.message));
 }
 
 async function addUser(req, res) {
@@ -76,7 +76,7 @@ async function addUser(req, res) {
                 res.status(200).send(obj);
             })
             .catch((e) => {
-                res.status(400).json({ error: e });
+                res.status(400).json({ error: e.message });
             });
     });
 }
@@ -84,18 +84,24 @@ async function addUser(req, res) {
 async function deletUser(req, res) {
     await db.User.destroy({ where: { id: req.params.id } })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'object delated',
                 data: obj
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
 async function getOneUser(req, res) {
     await db.User.findOne({ where: { id: req.params.id } })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             res.status(200).json({
                 status: 'success',
 
@@ -103,13 +109,15 @@ async function getOneUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error getting ' + err));
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
 async function RestoreOneUser(req, res) {
     await db.User.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {
-            // console.log(obj);
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             await obj.restore();
             res.status(200).json({
                 status: 'restored success',
@@ -118,7 +126,7 @@ async function RestoreOneUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error getting ' + err));
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
 
         // let userId = parseInt(req.params.id)
 
@@ -140,6 +148,9 @@ async function getAllUser(req, res) {
   const offset = req.query.page ? req.query.page * limit : 0;
     await db.User.findAndCountAll({ limit, offset,order: [['createdAt', 'DESC']] })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USERS NOT FOUND' });
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'status getted',
@@ -147,7 +158,7 @@ async function getAllUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
 async function getAllSoftUser(req, res) {
@@ -160,6 +171,9 @@ async function getAllSoftUser(req, res) {
         order: [['deletedAt', 'DESC']]
     })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USERS NOT FOUND' });
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'status delated',
@@ -167,7 +181,7 @@ async function getAllSoftUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
 // async function updateUser(req,res) {
@@ -189,6 +203,9 @@ async function updateUser(req, res) {
         }
     })
         .then(async (obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             obj.name = req.body.name || obj.name;
             obj.email = req.body.email || obj.email;
             obj.city = req.body.city || obj.city;
@@ -201,7 +218,7 @@ async function updateUser(req, res) {
             res.status(200).send(obj);
         })
         .catch((e) => {
-            res.status(400).json({ error: e });
+            res.status(400).json({ error: e.message });
         });
 }
 
@@ -233,14 +250,19 @@ async function getAllStudentPagination(req, res) {
      // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
     
+    
+
    const limit = req.query.size ? +req.query.size : 10;
   const offset = req.query.page ? req.query.page * limit : 0;
     await db.User.findAndCountAll(paginate(req.query,req.query))
         .then((obj) => {
-         console.log("hello",typeof obj )
-         Object.entries(obj).map((item)=>{
-            console.log(item)
-         })
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
+        //  console.log("hello",typeof obj )
+        //  Object.entries(obj).map((item)=>{
+        //     console.log(item)
+        //  })
             res.status(200).json({
                 status: 'success',
                 message: 'status getted',
@@ -248,7 +270,7 @@ async function getAllStudentPagination(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
 async function forgetPassword (req,res){

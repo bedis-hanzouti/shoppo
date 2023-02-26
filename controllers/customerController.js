@@ -10,7 +10,7 @@ async function login(req, res) {
     //console.log({user:user.name});
     const secret = process.env.secret || '123456azerty';
     if (!user) {
-        return res.status(400).send({ err: 'The userModel not found' });
+        return res.status(400).send({ err: 'The User not found' });
     }
 
     if (user && bcrypt.compareSync(req.body.password, user.password)) {
@@ -55,7 +55,7 @@ async function register(req, res) {
                 date: obj
             });
         })
-        .catch((err) => res.status(400).json('Error creating ' + err));
+        .catch((err) => res.status(400).json('Error creating ' + err.message));
 }
 
 async function addUser(req, res) {
@@ -76,7 +76,7 @@ async function addUser(req, res) {
                 res.status(200).send(obj);
             })
             .catch((e) => {
-                res.status(400).json({ error: e });
+                res.status(400).json({ error: e.message });
             });
     });
 }
@@ -84,18 +84,24 @@ async function addUser(req, res) {
 async function deletUser(req, res) {
     await db.Customer.destroy({ where: { id: req.params.id } })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'object delated',
                 data: obj
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
 async function getOneUser(req, res) {
     await db.Customer.findOne({ where: { id: req.params.id } })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             res.status(200).json({
                 status: 'success',
 
@@ -103,13 +109,15 @@ async function getOneUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error getting ' + err));
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
 async function RestoreOneUser(req, res) {
     await db.Customer.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {
-            // console.log(obj);
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             await obj.restore();
             res.status(200).json({
                 status: 'restored success',
@@ -118,23 +126,13 @@ async function RestoreOneUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error getting ' + err));
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
 
-        // let userId = parseInt(req.params.id)
-
-        // // Vérification si le champ id est présent et cohérent
-        // if (!userId) {
-        //     return res.status(400).json({ message: 'Missing parameter' })
-        // }
-        
-        // User.restore({ where: {id: userId}})
-        //     .then(() => res.status(204).json({}))
-        //     .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
+       
 }
 
 async function getAllUser(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+    
     
     const limit = req.query.size ? +req.query.size : 10;
   const offset = req.query.page ? req.query.page * limit : 0;
@@ -147,7 +145,7 @@ async function getAllUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
 async function getAllSoftUser(req, res) {
@@ -167,19 +165,10 @@ async function getAllSoftUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
-// async function updateUser(req,res) {
-//   let id = req.params.id
 
-//      await db.User.update(req.body, { where: { id: id }}).then((obj)=>{
-//       res.status(200).send(obj)
-//     }).catch((e)=>{
-//       res.status(400).json({error:e})
-//     })
-
-// }
 
 async function updateUser(req, res) {
     console.log(req.params.id);
@@ -189,6 +178,9 @@ async function updateUser(req, res) {
         }
     })
         .then(async (obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             obj.name = req.body.name || obj.name;
             obj.email = req.body.email || obj.email;
             obj.city = req.body.city || obj.city;
@@ -201,7 +193,7 @@ async function updateUser(req, res) {
             res.status(200).send(obj);
         })
         .catch((e) => {
-            res.status(400).json({ error: e });
+            res.status(400).json({ error: e.message });
         });
 }
 
@@ -244,13 +236,15 @@ async function getAllStudentPagination(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
 async function RestoreOneCategory(req, res) {
   await db.Customer.findOne({ where: { id: req.params.id }, paranoid: false })
       .then(async (obj) => {
-          // console.log(obj);
+        if (obj == null) {
+            res.status(400).json({ error: 'USER NOT FOUND' });
+        }
           await obj.restore();
           res.status(200).json({
               status: 'restored success',
@@ -259,7 +253,7 @@ async function RestoreOneCategory(req, res) {
               //   user:doc.payload.userN
           });
       })
-      .catch((err) => res.status(400).json('Error getting ' + err));
+      .catch((err) => res.status(400).json('Error getting ' + err.message));
 
       
 }
