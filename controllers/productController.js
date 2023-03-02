@@ -2,8 +2,7 @@ const categoryController = require('../controllers/categoryController');
 
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-const db = require('../models')
-
+const db = require('../models');
 
 async function addProductToCategorie(categoryId, productId) {
     console.log('productId', productId);
@@ -69,11 +68,11 @@ async function addProductToCategorie(categoryId, productId) {
 
 //  async function addProduct(req, res) {
 //     //console.log(req.body);
-    
+
 //         const user = await  db.User.findOne({ where: { id: req.body.UserId } });
 //         categories = req.body.categories;
 //         images = req.body.images;
-//         let product 
+//         let product
 //         let category
 //         promises = [];
 //     // try {
@@ -89,25 +88,16 @@ async function addProductToCategorie(categoryId, productId) {
 //                 discount: req.body.discount,
 //                 brand: req.body.brand,
 //                 UserId: user.id
-                
+
 //             }
 //             )
-            
-                
+
 //                 // console.log(product.toJSON());
 //                const c=await db.Category.findAll({raw:true})
-                    
-                
-            
-           
-               
-                
+
 //                  await p.addcategory(c);
 //                  console.log(await p.countCategories());
-                
-                
-          
-            
+
 //           } else {
 //             res.status(400).json({ error: 'User not found' });
 //         }
@@ -119,53 +109,49 @@ async function addProductToCategorie(categoryId, productId) {
 //         //     .then((obj)=>{
 //         //         console.log(obj);
 //         //         res.status(201).json(obj)})
-                
+
 //         // })
-    
+
 // }
 
-async function addProduct(req,res){
+async function addProduct(req, res) {
     // const file = req.file;
     // console.log(req.body.user_id);
     // if (!file) return res.status(400).send('No image in the request');
-  
+
     // const fileName = file.filename;
     // const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
-    const user = await db.User.findOne({where:{id:req.body.UserId}})
+    const user = await db.User.findOne({ where: { id: req.body.UserId } });
     categories = req.body.categories;
-    
-    if(user){
-    
-      db.Product.create({
-        name:req.body.name,
-        code:req.body.code,
-        description:req.body.description,
-        price:req.body.price,
-        quantity:req.body.quantity,
-        
-        discount:req.body.discount,
-        brand:req.body.brand,
-        UserId:user.id,
-       
-        }).then(prod => {
+
+    if (user) {
+        db.Product.create({
+            name: req.body.name,
+            code: req.body.code,
+            description: req.body.description,
+            price: req.body.price,
+            quantity: req.body.quantity,
+
+            discount: req.body.discount,
+            brand: req.body.brand,
+            UserId: user.id
+        }).then((prod) => {
             if (categories.length > 0) {
-              categories.forEach(category => {
+                categories.forEach((category) => {
                     db.Product_category.create({
-                      CategoryId: category.id,
-                      ProductId: prod.id
-                    }).then().catch((e)=>res.status(400).json({error:e.message}));
-                })
+                        CategoryId: category.id,
+                        ProductId: prod.id
+                    })
+                        .then()
+                        .catch((e) => res.status(400).json({ error: e.message }));
+                });
             }
-            res.status(201).json(prod)
-        })
-      }
-      else{
-        res.status(400).json({error:"User not found"})
-  
-        
-      }
- 
-  }
+            res.status(201).json(prod);
+        });
+    } else {
+        res.status(400).json({ error: 'User not found' });
+    }
+}
 
 async function deletProduct(req, res) {
     await db.Product.destroy({ where: { id: req.params.id } })
@@ -182,10 +168,15 @@ async function deletProduct(req, res) {
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 async function getOneProduct(req, res) {
-    await db.Product.findOne({ where: { id: req.params.id },include:[ {
-        model: db.Category,
-        as:'category'
-    }]} )
+    await db.Product.findOne({
+        where: { id: req.params.id },
+        include: [
+            {
+                model: db.Category,
+                as: 'category'
+            }
+        ]
+    })
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'PRODUCT NOT FOUND' });
@@ -202,13 +193,14 @@ async function getOneProduct(req, res) {
 async function getAllProduct(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
-    await db.Product.findAndCountAll({include:[ {
-        model: db.Image,
-        
-    },
-],order: [
-    ['createdAt', 'DESC']
-  ]})
+    await db.Product.findAndCountAll({
+        include: [
+            {
+                model: db.Image
+            }
+        ],
+        order: [['createdAt', 'DESC']]
+    })
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'PRODUCTS NOT FOUND' });
@@ -226,20 +218,22 @@ async function getAllProduct(req, res) {
 async function getAllProductByCategory(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
-    await db.Product.findAndCountAll({include:[ {
-        model: db.Image,
-        
-    },{model:db.Category,as:'category',where:{id:req.params.id}}
-],order: [
-    ['createdAt', 'DESC']
-  ]})
+    await db.Product.findAndCountAll({
+        include: [
+            {
+                model: db.Image
+            },
+            { model: db.Category, as: 'category', where: { id: {[Op.in]: req.body.categories} } }
+        ],
+        order: [['createdAt', 'DESC']]
+    })
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'PRODUCTS NOT FOUND' });
             }
             res.status(200).json({
                 status: 'success',
-                
+
                 data: obj
                 //   user:doc.payload.userN
             });
@@ -248,19 +242,32 @@ async function getAllProductByCategory(req, res) {
 }
 
 async function getAllBrandByCategory(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
-    await db.Product.findAndCountAll({attributes: ['brand'],include:[ {model:db.Category,as:'category',where:{id:req.params.id},attributes: ['name']}
-],order: [
-    ['createdAt', 'DESC']
-  ]})
+    const categories=await db.Category.findAll({ where: {  id: {[Op.in]: req.body.categories} } })
+    if (!categories) {
+        res.status(400).json({ error: 'Categories NOT FOUND' });
+    }
+    await db.Product.findAll({
+        attributes: ['brand'],
+        raw:true,
+        group: ['brand'],
+        include: [
+            {
+                model: db.Category,
+                as: 'category',
+                where: {id: {[Op.in]: req.body.categories} },
+                attributes: ['name']
+            }
+        ],
+        order: [['createdAt', 'DESC']],
+        
+    })
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'BRANDS NOT FOUND' });
             }
             res.status(200).json({
                 status: 'success',
-                
+
                 data: obj
                 //   user:doc.payload.userN
             });
@@ -271,20 +278,23 @@ async function getAllBrandByCategory(req, res) {
 async function getAllProductByCategoryTopDix(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
-    await db.Product.findAndCountAll({include:[ {
-        model: db.Image,
-        
-    },{model:db.Category,as:'category',where:{id:req.params.id}}
-],order: [
-    ['createdAt', 'DESC']
-  ], limit: 10})
+    await db.Product.findAndCountAll({
+        include: [
+            {
+                model: db.Image
+            },
+            { model: db.Category, as: 'category', where: { id: req.params.id } }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: 10
+    })
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'PRODUCTS NOT FOUND' });
             }
             res.status(200).json({
                 status: 'success',
-                
+
                 data: obj
                 //   user:doc.payload.userN
             });

@@ -23,6 +23,12 @@ module.exports = (sequelize, DataTypes) => {
     },{
         sequelize,
         paranoid: true,
+        defaultScope: {
+            attributes: {
+              exclude: ['createdAt','updatedAt','deletedAt']
+            },
+          
+          },
       
         // If you want to give a custom name to the deletedAt column
         // deletedAt: 'destroyTime'

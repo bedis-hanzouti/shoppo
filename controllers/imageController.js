@@ -1,10 +1,12 @@
 const db = require('../models');
 
 const Sequelize = require('sequelize');
+const fs = require('fs');
+
 const Op = Sequelize.Op;
 async function addImage(req, res) {
-    const file = req.file;
-    console.log(req.body.user_id);
+    const file = req.files;
+    console.log(file);
     if (!file) return res.status(400).send('No image in the request');
 
     const fileName = file.filename;
@@ -15,27 +17,35 @@ async function addImage(req, res) {
 
     if (product) {
         db.Image.sync({ force: false }).then(() => {
-            db.Image.create({
-                name: req.body.name,
-                alt: req.body.alt,
-                url: `${basePath}${fileName}`, // "http://localhost:3000/public/upload/image-2323232",
-
-                ProductId: req.body.pro
-            })
-                .then((obj) => {
-                    res.status(200).send(obj);
+            file.forEach((obj)=>{
+                db.Image.create({
+                    name: req.body.name,
+                    alt: req.body.alt,
+                    url: `${basePath}${obj.filename}`, // "http://localhost:3000/public/upload/image-2323232",
+    
+                    ProductId: req.body.pro
                 })
-                .catch(async (e) => {
-                    await fs.unlink(file.path, (err) => {
-                        if (err) {
-                            console.log('error in deleting a file from uploads');
-                        } else {
-                            console.log('succesfully deleted from the uploads folder');
-                        }
+                    .then((obj) => {
+                        res.status(200).send(obj);
+                    })
+                    .catch(async (e) => {
+                        // file.forEach(async(obj)=>{
+                            await fs.unlink(file.path, (err) => {
+                                if (err) {
+                                    console.log('error in deleting a file from uploads');
+                                } else {
+                                    console.log('succesfully deleted from the uploads folder');
+                                }
+                            });
+                        // })
+                     
+                        res.status(400).json(e.message);
                     });
-                    res.status(400).json(e.message);
-                });
-        });
+            });
+
+            }
+            )
+           
     } else {
         res.status(400).json({ error: 'product not found' });
     }

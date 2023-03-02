@@ -39,8 +39,8 @@ async function addNewOrder(req, res) {
                         orderLines.forEach((orderLine) => {
                             db.orderLine
                                 .create({
-                                    cusyomerId: customer.id,
-                                    product_id: prod.id
+                                    customerId: customer.id,
+                                    ProductId: prod.id
                                 })
                                 .then()
                                 .catch((e) => res.status(400).json({ error: e.message }));

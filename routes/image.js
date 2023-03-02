@@ -3,7 +3,7 @@ const route=express.Router()
 const configMedia = require("../config/multer");
 const imageController=require('../controllers/imageController')
 
-route.post('/',configMedia.uploadOptions.single('url'),imageController.addImage)
+route.post('/',configMedia.uploadOptions.array('urls',5),imageController.addImage)
 // route.post('/',configMedia.uploadOptions.array('image',5),productController.addProduct)
 
 route.put('/:id',configMedia.uploadOptions.single('url'),imageController.updateImage)
