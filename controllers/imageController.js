@@ -13,33 +13,38 @@ async function addImage(req, res) {
     const basePath = `/public/uploads/`;
     // const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
 
-    const product = await db.Product.findOne({ where: { id: req.body.pro } });
+    const product = await db.Product.findOne({ where: { id: req.body.ProductId } });
 
     if (product) {
-        db.Image.sync({ force: false }).then(() => {
+      db.Image.sync({ force: false }).then(() => {
             file.forEach((obj)=>{
                 db.Image.create({
                     name: req.body.name,
                     alt: req.body.alt,
                     url: `${basePath}${obj.filename}`, // "http://localhost:3000/public/upload/image-2323232",
     
-                    ProductId: req.body.pro
+                    ProductId: req.body.ProductId
                 })
+
+                
+
+
                     .then((obj) => {
-                        res.status(200).send(obj);
+                      return  res.status(200).send(obj);
                     })
-                    .catch(async (e) => {
-                        // file.forEach(async(obj)=>{
-                            await fs.unlink(file.path, (err) => {
+                    .catch( (e) => {
+                        file.forEach(async(obj)=>{
+                           await  fs.unlink(obj.path, (err) => {
                                 if (err) {
                                     console.log('error in deleting a file from uploads');
                                 } else {
                                     console.log('succesfully deleted from the uploads folder');
                                 }
                             });
-                        // })
+                         })
                      
-                        res.status(400).json(e.message);
+                      return  res.status(400).send(e.message);
+                       
                     });
             });
 

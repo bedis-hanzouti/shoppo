@@ -3,6 +3,8 @@ const categoryController = require('../controllers/categoryController');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../models');
+const fs = require('fs');
+
 
 async function addProductToCategorie(categoryId, productId) {
     console.log('productId', productId);
@@ -115,17 +117,28 @@ async function addProductToCategorie(categoryId, productId) {
 // }
 
 async function addProduct(req, res) {
-    // const file = req.file;
-    // console.log(req.body.user_id);
-    // if (!file) return res.status(400).send('No image in the request');
+    var prodId = 0
+    const file = req.files;
 
-    // const fileName = file.filename;
-    // const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
+    if (!file) return res.status(400).send('No image in the request');
+
+
+    const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
+    const categories = req.body.categories;
+    // const images = req.body.images;
+
     const user = await db.User.findOne({ where: { id: req.body.UserId } });
-    categories = req.body.categories;
+     const category=await db.Category.findAll({ row:true,where: {  id: {[Op.in]: req.body.categories} } })
+   // const category = await db.Category.findAll({ row: true, where: { id: req.body.categories } });
+
+    if (!category.length) {
+        return res.status(400).json({ error: 'CATEGORIES not found' });
+    }
 
     if (user) {
-        db.Product.create({
+
+
+        const p = await db.Product.create({
             name: req.body.name,
             code: req.body.code,
             description: req.body.description,
@@ -135,22 +148,63 @@ async function addProduct(req, res) {
             discount: req.body.discount,
             brand: req.body.brand,
             UserId: user.id
-        }).then((prod) => {
-            if (categories.length > 0) {
-                categories.forEach((category) => {
-                    db.Product_category.create({
-                        CategoryId: category.id,
-                        ProductId: prod.id
-                    })
-                        .then()
-                        .catch((e) => res.status(400).json({ error: e.message }));
-                });
-            }
-            res.status(201).json(prod);
+
+        })
+
+        if(p){
+
+        if (categories.length > 0) {
+            console.log("categories", categories);
+
+            category.forEach(async (category) => {
+
+
+                await db.Product_category.create({
+                    CategoryId: category.id,
+                    ProductId: p.id
+                })
+            })
+        }
+
+
+
+        file.forEach(async(obj) => {
+         await   db.Image.create({
+                name: obj.filename,
+                alt: "ss",
+                url: `${basePath}${obj.filename}`,
+                ProductId: p.id
+            })
+                .then((obj) => {
+                    res.status(201).json("Product creted");
+                })
+                
+
         });
-    } else {
+
+
+        }
+        else{
+            file.forEach(async (obj) => {
+                // console.log(obj);
+                 await fs.unlink(obj.path, (err) => {
+                     if (err) {
+                         console.log('error in deleting a file from uploads');
+                     } else {
+                         console.log('succesfully deleted from the uploads folder');
+                     }
+                 });
+             })
+            res.status(400).json({ error: 'error creating product' });
+        }
+    }
+       
+
+   
+    else {
         res.status(400).json({ error: 'User not found' });
     }
+    
 }
 
 async function deletProduct(req, res) {
@@ -223,7 +277,7 @@ async function getAllProductByCategory(req, res) {
             {
                 model: db.Image
             },
-            { model: db.Category, as: 'category', where: { id: {[Op.in]: req.body.categories} } }
+            { model: db.Category, as: 'category', where: { id: { [Op.in]: req.body.categories } } }
         ],
         order: [['createdAt', 'DESC']]
     })
@@ -242,24 +296,24 @@ async function getAllProductByCategory(req, res) {
 }
 
 async function getAllBrandByCategory(req, res) {
-    const categories=await db.Category.findAll({ where: {  id: {[Op.in]: req.body.categories} } })
+    const categories = await db.Category.findAll({ where: { id: { [Op.in]: req.body.categories } } })
     if (!categories) {
         res.status(400).json({ error: 'Categories NOT FOUND' });
     }
     await db.Product.findAll({
         attributes: ['brand'],
-        raw:true,
+        raw: true,
         group: ['brand'],
         include: [
             {
                 model: db.Category,
                 as: 'category',
-                where: {id: {[Op.in]: req.body.categories} },
+                where: { id: { [Op.in]: req.body.categories } },
                 attributes: ['name']
             }
         ],
         order: [['createdAt', 'DESC']],
-        
+
     })
         .then((obj) => {
             if (obj == null) {

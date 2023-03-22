@@ -22,9 +22,7 @@ async function addNewOrder(req, res) {
             });
         })
         .then((customer) => {
-            if (customer == null) {
-                res.status(400).json({ error: 'PRODUCT NOT FOUND' });
-            }
+            if (customer) 
             db.Order.create({
                 status: req.body.status || 'Pending',
                 total: req.body.total,
@@ -42,7 +40,7 @@ async function addNewOrder(req, res) {
                                     customerId: customer.id,
                                     ProductId: prod.id
                                 })
-                                .then()
+                              
                                 .catch((e) => res.status(400).json({ error: e.message }));
                         });
                     }

@@ -2,6 +2,7 @@ const express=require('express')
 const route=express.Router()
 const orderController=require('../controllers/orderController')
 
+route.post('/',orderController.addNewOrder)
 route.put('/:id',orderController.updateOrder)
 // route.get('/',userController.getAllUser)
 route.get('/',orderController.getAllOrdersPagination)
