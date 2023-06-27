@@ -116,96 +116,168 @@ async function addProductToCategorie(categoryId, productId) {
 
 // }
 
+// async function addProduct(req, res) {
+//     var prodId = 0
+//     const file = req.files;
+
+//     if (!file) return res.status(400).send('No image in the request');
+
+
+//     const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
+//     const categories = req.body.categories;
+//     // const images = req.body.images;
+
+//     const user = await db.User.findOne({ where: { id: req.body.UserId } });
+//      const category=await db.Category.findAll({ row:true,where: {  id: {[Op.in]: req.body.categories} } })
+//    // const category = await db.Category.findAll({ row: true, where: { id: req.body.categories } });
+
+//     if (!category.length) {
+//         return res.status(400).json({ error: 'CATEGORIES not found' });
+//     }
+
+//     if (user) {
+
+
+//         const p = await db.Product.create({
+//             name: req.body.name,
+//             code: req.body.code,
+//             description: req.body.description,
+//             price: req.body.price,
+//             quantity: req.body.quantity,
+
+//             discount: req.body.discount,
+//             brand: req.body.brand,
+//             UserId: user.id
+
+//         })
+
+//         if(p){
+
+//         if (categories.length > 0) {
+//             console.log("categories", categories);
+
+//             category.forEach(async (category) => {
+
+
+//                 await db.Product_category.create({
+//                     CategoryId: category.id,
+//                     ProductId: p.id
+//                 })
+//             })
+//         }
+
+
+
+//         file.forEach(async(obj) => {
+//          await   db.Image.create({
+//                 name: obj.filename,
+//                 alt: "ss",
+//                 url: `${basePath}${obj.filename}`,
+//                 ProductId: p.id
+//             })
+//                 .then((obj) => {
+//                     res.status(201).json("Product creted");
+//                 })
+
+
+//         });
+
+
+//         }
+//         else{
+//             file.forEach(async (obj) => {
+//                 // console.log(obj);
+//                  await fs.unlink(obj.path, (err) => {
+//                      if (err) {
+//                          console.log('error in deleting a file from uploads');
+//                      } else {
+//                          console.log('succesfully deleted from the uploads folder');
+//                      }
+//                  });
+//              })
+//             res.status(400).json({ error: 'error creating product' });
+//         }
+//     }
+
+
+
+//     else {
+//         res.status(400).json({ error: 'User not found' });
+//     }
+
+// }
+
 async function addProduct(req, res) {
-    var prodId = 0
     const file = req.files;
 
     if (!file) return res.status(400).send('No image in the request');
 
-
     const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
     const categories = req.body.categories;
-    // const images = req.body.images;
 
-    const user = await db.User.findOne({ where: { id: req.body.UserId } });
-     const category=await db.Category.findAll({ row:true,where: {  id: {[Op.in]: req.body.categories} } })
-   // const category = await db.Category.findAll({ row: true, where: { id: req.body.categories } });
+    try {
+        const user = await db.User.findOne({ where: { id: req.body.UserId } });
+        const category = await db.Category.findAll({ where: { id: { [Op.in]: req.body.categories } } });
 
-    if (!category.length) {
-        return res.status(400).json({ error: 'CATEGORIES not found' });
-    }
-
-    if (user) {
-
-
-        const p = await db.Product.create({
-            name: req.body.name,
-            code: req.body.code,
-            description: req.body.description,
-            price: req.body.price,
-            quantity: req.body.quantity,
-
-            discount: req.body.discount,
-            brand: req.body.brand,
-            UserId: user.id
-
-        })
-
-        if(p){
-
-        if (categories.length > 0) {
-            console.log("categories", categories);
-
-            category.forEach(async (category) => {
-
-
-                await db.Product_category.create({
-                    CategoryId: category.id,
-                    ProductId: p.id
-                })
-            })
+        if (!category.length) {
+            return res.status(400).json({ error: 'CATEGORIES not found' });
         }
 
+        if (user) {
+            const p = await db.Product.create({
+                name: req.body.name,
+                code: req.body.code,
+                description: req.body.description,
+                price: req.body.price,
+                quantity: req.body.quantity,
+                discount: req.body.discount,
+                brand: req.body.brand,
+                UserId: user.id
+            });
 
+            if (p) {
+                if (categories.length > 0) {
+                    console.log("categories", categories);
 
-        file.forEach(async(obj) => {
-         await   db.Image.create({
-                name: obj.filename,
-                alt: "ss",
-                url: `${basePath}${obj.filename}`,
-                ProductId: p.id
-            })
-                .then((obj) => {
-                    res.status(201).json("Product creted");
-                })
-                
+                    await Promise.all(category.map(async (category) => {
+                        await db.Product_category.create({
+                            CategoryId: category.id,
+                            ProductId: p.id
+                        });
+                    }));
+                }
 
-        });
+                await Promise.all(file.map(async (obj) => {
+                    await db.Image.create({
+                        name: obj.filename,
+                        alt: "ss",
+                        url: `${basePath}${obj.filename}`,
+                        ProductId: p.id
+                    });
+                }));
 
-
+                res.status(201).json("Product created");
+            } else {
+                file.forEach(async (obj) => {
+                    await fs.unlink(obj.path, (err) => {
+                        if (err) {
+                            console.log('error in deleting a file from uploads');
+                        } else {
+                            console.log('successfully deleted from the uploads folder');
+                        }
+                    });
+                });
+                res.status(400).json({ error: 'error creating product' });
+            }
+        } else {
+            res.status(400).json({ error: 'User not found' });
         }
-        else{
-            file.forEach(async (obj) => {
-                // console.log(obj);
-                 await fs.unlink(obj.path, (err) => {
-                     if (err) {
-                         console.log('error in deleting a file from uploads');
-                     } else {
-                         console.log('succesfully deleted from the uploads folder');
-                     }
-                 });
-             })
-            res.status(400).json({ error: 'error creating product' });
-        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
     }
-       
-
-   
-    else {
-        res.status(400).json({ error: 'User not found' });
-    }
-    
 }
+
 
 async function deletProduct(req, res) {
     await db.Product.destroy({ where: { id: req.params.id } })
@@ -269,65 +341,154 @@ async function getAllProduct(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
-async function getAllProductByCategory(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
-    await db.Product.findAndCountAll({
-        include: [
-            {
-                model: db.Image
-            },
-            { model: db.Category, as: 'category', where: { id: { [Op.in]: req.body.categories } } }
-        ],
-        order: [['createdAt', 'DESC']]
-    })
-        .then((obj) => {
-            if (obj == null) {
-                res.status(400).json({ error: 'PRODUCTS NOT FOUND' });
-            }
-            res.status(200).json({
-                status: 'success',
+// async function getAllProductByCategory(req, res) {
+//     console.log(req.body.categories)
 
-                data: obj
-                //   user:doc.payload.userN
-            });
-        })
-        .catch((err) => res.status(400).json('Error getting ' + err.message));
+//     await db.Product.findAndCountAll({
+//         include: [
+//             {
+//                 model: db.Image
+//             },
+//             { model: db.Category, as: 'category', where: { id: { [Op.in]: req.body.categories } } }
+//         ],
+//         order: [['createdAt', 'DESC']]
+//     })
+//         .then((obj) => {
+//             if (obj == null) {
+//                 res.status(400).json({ error: 'PRODUCTS NOT FOUND' });
+//             }
+//             res.status(200).json({
+//                 status: 'success',
+
+//                 data: obj
+
+//             });
+//         })
+//         .catch((err) => res.status(400).json('Error getting ' + err.message));
+// }
+
+
+
+async function getAllProductByCategory(req, res) {
+    const { categories } = req.params;
+    console.log("categories", categories);
+
+    // const categories = [3, 2]
+
+    try {
+        const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+
+        const products = await db.Product.findAll({
+            include: [
+                {
+                    model: db.Image,
+                },
+                {
+                    model: db.Category,
+                    as: 'category',
+                    where: { id: { [db.Sequelize.Op.in]: categoryIds } }, // Use the categoryIds array in the where clause
+                },
+            ],
+        });
+
+        if (!products || products.length === 0) {
+            return res.status(400).json({ error: 'No products found for the specified categories' });
+        }
+
+        return res.status(200).json({
+            status: 'success',
+            data: products,
+        });
+    } catch (error) {
+        console.error('Error getting products:', error);
+        return res.status(400).json({ error: 'Error getting products' });
+    }
 }
+
+
+
+
+
+
+// async function getAllBrandByCategory(req, res) {
+
+//     const categories = await db.Category.findAll({ where: { id: { [Op.in]: req.body.categories } } })
+//     if (!categories) {
+//         res.status(400).json({ error: 'Categories NOT FOUND' });
+//     }
+//     await db.Product.findAll({
+//         attributes: ['brand'],
+//         raw: true,
+//         group: ['brand'],
+//         include: [
+//             {
+//                 model: db.Category,
+//                 as: 'category',
+//                 where: { id: { [Op.in]: req.body.categories } },
+//                 attributes: ['name']
+//             }
+//         ],
+//         order: [['createdAt', 'DESC']],
+
+//     })
+//         .then((obj) => {
+//             if (obj == null) {
+//                 res.status(400).json({ error: 'BRANDS NOT FOUND' });
+//             }
+//             res.status(200).json({
+//                 status: 'success',
+
+//                 data: obj
+//                 //   user:doc.payload.userN
+//             });
+//         })
+//         .catch((err) => res.status(400).json('Error getting ' + err.message));
+// }
 
 async function getAllBrandByCategory(req, res) {
-    const categories = await db.Category.findAll({ where: { id: { [Op.in]: req.body.categories } } })
-    if (!categories) {
-        res.status(400).json({ error: 'Categories NOT FOUND' });
+    const { categories } = req.params;
+    console.log("categories", categories);
+
+    // const categories = [3, 2]
+    try {
+        const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+        const cat = await db.Category.findAll({
+            where: { id: { [db.Sequelize.Op.in]: categoryIds } },
+        });
+
+        if (!cat) {
+            return res.status(400).json({ error: 'Categories NOT FOUND' });
+        }
+
+        const brands = await db.Product.findAll({
+            attributes: ['brand'],
+            raw: true,
+            group: ['brand'],
+            include: [
+                {
+                    model: db.Category,
+                    as: 'category',
+                    where: { id: { [db.Sequelize.Op.in]: categoryIds } },
+                    attributes: ['name'],
+                },
+            ],
+            order: [['createdAt', 'DESC']],
+        });
+
+        if (!brands || brands.length === 0) {
+            return res.status(400).json({ error: 'BRANDS NOT FOUND' });
+        }
+
+        return res.status(200).json({
+            status: 'success',
+            data: brands,
+        });
+    } catch (error) {
+        console.error('Error getting brands:', error);
+        return res.status(400).json({ error: 'Error getting brands' });
     }
-    await db.Product.findAll({
-        attributes: ['brand'],
-        raw: true,
-        group: ['brand'],
-        include: [
-            {
-                model: db.Category,
-                as: 'category',
-                where: { id: { [Op.in]: req.body.categories } },
-                attributes: ['name']
-            }
-        ],
-        order: [['createdAt', 'DESC']],
-
-    })
-        .then((obj) => {
-            if (obj == null) {
-                res.status(400).json({ error: 'BRANDS NOT FOUND' });
-            }
-            res.status(200).json({
-                status: 'success',
-
-                data: obj
-                //   user:doc.payload.userN
-            });
-        })
-        .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
+
 
 async function getAllProductByCategoryTopDix(req, res) {
     // let token=req.headers.authorization

@@ -3,78 +3,165 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
 // add skill
+// async function addNewOrder(req, res) {
+//     orderLines = req.body.orderLines;
+
+//     db.Customer.findOne({
+//         where: {
+//             id: req.params.id
+//         }
+//     })
+//         .then((obj) => {
+//             if (obj == null) {
+//                 res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
+//             }
+//             db.Product.findOne({
+//                 where: {
+//                     id: req.body.product
+//                 }
+//             });
+//         })
+//         .then((customer) => {
+//             if (customer) 
+//             db.Order.create({
+//                 status: req.body.status || 'Pending',
+//                 total: req.body.total,
+//                 discount: req.body.discount || 0,
+//                 quantity: req.body.quantity,
+//                 total_discount: req.body.total_discount,
+
+//                 CustomerId: customer.id
+//             })
+//                 .then((order) => {
+//                     if (orderLines.length > 0) {
+//                         orderLines.forEach((orderLine) => {
+//                             db.orderLine
+//                                 .create({
+//                                     customerId: customer.id,
+//                                     ProductId: prod.id
+//                                 })
+
+//                                 .catch((e) => res.status(400).json({ error: e.message }));
+//                         });
+//                     }
+//                     res.status(201).json(order);
+//                 })
+//                 .then((or) => res.send(or));
+//         });
+// }
+
 async function addNewOrder(req, res) {
-    orderLines = req.body.orderLines;
+    try {
+        const orderLines = req.body.orderLines;
+        const customerId = req.params.id;
+        const productId = req.body.product;
 
-    db.Customer.findOne({
-        where: {
-            id: req.params.id
-        }
-    })
-        .then((obj) => {
-            if (obj == null) {
-                res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
-            }
-            db.Product.findOne({
-                where: {
-                    id: req.body.product
-                }
-            });
-        })
-        .then((customer) => {
-            if (customer) 
-            db.Order.create({
-                status: req.body.status || 'Pending',
-                total: req.body.total,
-                discount: req.body.discount || 0,
-                quantity: req.body.quantity,
-                total_discount: req.body.total_discount,
-
-                CustomerId: customer.id
-            })
-                .then((order) => {
-                    if (orderLines.length > 0) {
-                        orderLines.forEach((orderLine) => {
-                            db.orderLine
-                                .create({
-                                    customerId: customer.id,
-                                    ProductId: prod.id
-                                })
-                              
-                                .catch((e) => res.status(400).json({ error: e.message }));
-                        });
-                    }
-                    res.status(201).json(order);
-                })
-                .then((or) => res.send(or));
+        const customer = await db.Customer.findOne({
+            where: {
+                id: customerId,
+            },
         });
+
+        if (!customer) {
+            return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
+        }
+
+        const product = await db.Product.findOne({
+            where: {
+                id: productId,
+            },
+        });
+
+        if (!product) {
+            return res.status(400).json({ error: 'PRODUCT NOT FOUND' });
+        }
+
+        const order = await db.Order.create({
+            status: req.body.status || 'Pending',
+            total: req.body.total,
+            discount: req.body.discount || 0,
+            quantity: req.body.quantity,
+            total_discount: req.body.total_discount,
+            CustomerId: customer.id,
+        });
+
+        if (orderLines.length > 0) {
+            for (let i = 0; i < orderLines.length; i++) {
+                const orderLine = orderLines[i];
+
+                await db.orderLine.create({
+                    customerId: customer.id,
+                    ProductId: product.id,
+                });
+            }
+        }
+
+        return res.status(201).json(order);
+    } catch (error) {
+        console.error('Error creating order:', error);
+        return res.status(400).json({ error: 'Error creating order' });
+    }
 }
+
+
+// async function updateOrder(req, res) {
+//     await db.Order.findOne({
+//         where: {
+//             id: req.params.id
+//         }
+//     })
+//         .then(async (obj) => {
+//             if (obj == null) {
+//                 res.status(400).json({ error: 'Order NOT FOUND' });
+//             }
+
+//             obj.status = req.body.status || obj.status;
+//             obj.total = req.body.total || obj.total;
+//             obj.total_discount = req.body.total_discount || obj.total_discount;
+//             obj.quantity = req.body.quantity || obj.quantity;
+//             obj.discount = req.body.discount || obj.discount;
+//             obj.CustomerId = req.body.CustomerId || obj.CustomerId;
+
+//             await obj.save();
+//             res.status(200).send(obj);
+//         })
+//         .catch((e) => {
+//             res.status(400).json({ error: e.message });
+//         });
+// }
 
 async function updateOrder(req, res) {
-    await db.Order.findOne({
-        where: {
-            id: req.params.id
-        }
-    })
-        .then(async (obj) => {
-            if (obj == null) {
-                res.status(400).json({ error: 'Order NOT FOUND' });
-            }
+    try {
+        const orderId = req.params.id;
 
-            obj.status = req.body.status || obj.status;
-            obj.total = req.body.total || obj.total;
-            obj.total_discount = req.body.total_discount || obj.total_discount;
-            obj.quantity = req.body.quantity || obj.quantity;
-            obj.discount = req.body.discount || obj.discount;
-            obj.CustomerId = req.body.CustomerId || obj.CustomerId;
-
-            await obj.save();
-            res.status(200).send(obj);
-        })
-        .catch((e) => {
-            res.status(400).json({ error: e.message });
+        const order = await db.Order.findOne({
+            where: {
+                id: orderId,
+            },
         });
+
+        if (!order) {
+            return res.status(400).json({ error: 'Order NOT FOUND' });
+        }
+
+        order.status = req.body.status || order.status;
+        order.total = req.body.total || order.total;
+        order.total_discount = req.body.total_discount || order.total_discount;
+        order.quantity = req.body.quantity || order.quantity;
+        order.discount = req.body.discount || order.discount;
+        order.CustomerId = req.body.CustomerId || order.CustomerId;
+
+        await order.save();
+
+        return res.status(200).send(order);
+    } catch (error) {
+        console.error('Error updating order:', error);
+        return res.status(400).json({ error: error.message });
+    }
 }
+
+
+
 async function deleteOrder(req, res) {
     await db.Order.destroy({ where: { id: req.params.id } })
         .then((obj) => {
@@ -107,26 +194,58 @@ async function getOneOrder(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
-async function getOrderByCustomer(req, res) {
-    await db.Order.findAllAndCount({ where: { CustomerId: req.params.id }, include: db.Customer })
-        .then((obj) => {
-            if (obj == null) {
-                res.status(400).json({ error: 'Orders NOT FOUND' });
-            }
-            let totalAmount = 0;
+// async function getOrderByCustomer(req, res) {
+//     await db.Order.findAllAndCount({ where: { CustomerId: req.params.id }, include: db.Customer })
+//         .then((obj) => {
+//             if (obj == null) {
+//                 res.status(400).json({ error: 'Orders NOT FOUND' });
+//             }
+//             let totalAmount = 0;
 
-            obj.forEach((order) => {
-                totalAmount += order.total;
-            });
-            res.status(200).json({
-                status: 'success',
-                totalPrice: totalAmount,
-                data: obj
-                //   user:doc.payload.userN
-            });
-        })
-        .catch((err) => res.status(400).json('Error getting ' + err.message));
+//             obj.forEach((order) => {
+//                 totalAmount += order.total;
+//             });
+//             res.status(200).json({
+//                 status: 'success',
+//                 totalPrice: totalAmount,
+//                 data: obj
+//                 //   user:doc.payload.userN
+//             });
+//         })
+//         .catch((err) => res.status(400).json('Error getting ' + err.message));
+// }
+
+async function getOrderByCustomer(req, res) {
+    try {
+        const customerId = req.params.id;
+
+        const orders = await db.Order.findAll({
+            where: {
+                CustomerId: customerId,
+            },
+            include: db.Customer,
+        });
+
+        if (orders.length === 0) {
+            return res.status(400).json({ error: 'Orders NOT FOUND' });
+        }
+
+        let totalAmount = 0;
+        orders.forEach((order) => {
+            totalAmount += order.total;
+        });
+
+        return res.status(200).json({
+            status: 'success',
+            totalPrice: totalAmount,
+            data: orders,
+        });
+    } catch (error) {
+        console.error('Error getting orders:', error);
+        return res.status(400).json({ error: error.message });
+    }
 }
+
 
 async function getAllSoftOrders(req, res) {
     // let token=req.headers.authorization
@@ -143,7 +262,7 @@ async function getAllSoftOrders(req, res) {
             }
             res.status(200).json({
                 status: 'success',
-                
+
                 data: obj
                 //   user:doc.payload.userN
             });
