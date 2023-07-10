@@ -103,7 +103,7 @@ async function addNewOrder0(req, res) {
     }
 }
 
-async function addNewOrder(req, res) {
+async function addNewOrder1(req, res) {
     try {
         const orderData = req.body;
         const customerId = orderData.customer_id;
@@ -153,6 +153,55 @@ async function addNewOrder(req, res) {
     } catch (error) {
         console.error('Error creating order:', error);
         return res.status(400).json({ error: 'Error creating order' });
+    }
+}
+
+async function addNewOrder(req, res) {
+    try {
+        const orderData = req.body;
+        const customerId = orderData.customer_id;
+        const orderLines = orderData.orderLines;
+
+        const customer = await db.Customer.findOne({
+            where: {
+                id: customerId,
+            },
+        });
+
+        if (!customer) {
+            return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
+        }
+
+        const order = await db.Order.create({
+            pending: Date.now(),
+            total: orderData.total,
+            discount: orderData.discount || 0,
+            quantity: orderData.quantity,
+            total_discount: orderData.total_discount,
+            CustomerId: customer.id,
+        });
+
+        // Create the order lines
+        if (orderLines && orderLines.length > 0) {
+            for (const orderLineData of orderLines) {
+                const { orderQuantity, price, discount, total, total_discount, productId } = orderLineData;
+
+                await db.OrderLine.create({
+                    orderQuantity,
+                    price,
+                    discount,
+                    total,
+                    total_discount,
+                    OrderId: order.id,
+                    ProductId: productId
+                });
+            }
+        }
+
+        return res.status(201).json({ message: 'Order created', order });
+    } catch (error) {
+        console.error('Error creating order:', error);
+        return res.status(500).json({ error: 'Internal server error' });
     }
 }
 
