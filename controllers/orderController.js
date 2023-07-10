@@ -304,6 +304,10 @@ async function getOrderByCustomer(req, res) {
 }
 
 
+
+
+
+
 async function getAllSoftOrders(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
@@ -377,5 +381,6 @@ module.exports = {
     getAllOrdersPagination,
     deleteOrder,
     updateOrder,
-    getOrderByCustomer
+    getOrderByCustomer,
+
 };
