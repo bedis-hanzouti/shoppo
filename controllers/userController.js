@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const sendEmail = require("../config/sendMail");
 const db = require('../models');
@@ -6,14 +6,16 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
 async function login(req, res) {
-    const user = await db.User.findOne({ where: { email: req.body.email } });
-    //console.log({user:user.name});
+    const user = await db.User.findOne({ where: { email: req.body.email }, attributes: { include: ['password'] } });
+    console.log({ body: user.password });
     const secret = process.env.secret || '123456azerty';
     if (!user) {
         return res.status(400).send({ err: 'The userModel not found' });
     }
-
-    if (user && bcrypt.compareSync(req.body.password, user.password)) {
+    const match = await bcrypt.compareSync(req.body.password, user.password)
+    console.log({ match: match });
+    if (user && match) {
+        console.log(user);
         const token = jwt.sign(
             {
                 userModelId: user.id,
@@ -128,25 +130,25 @@ async function RestoreOneUser(req, res) {
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 
-        // let userId = parseInt(req.params.id)
+    // let userId = parseInt(req.params.id)
 
-        // // Vérification si le champ id est présent et cohérent
-        // if (!userId) {
-        //     return res.status(400).json({ message: 'Missing parameter' })
-        // }
-        
-        // User.restore({ where: {id: userId}})
-        //     .then(() => res.status(204).json({}))
-        //     .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
+    // // Vérification si le champ id est présent et cohérent
+    // if (!userId) {
+    //     return res.status(400).json({ message: 'Missing parameter' })
+    // }
+
+    // User.restore({ where: {id: userId}})
+    //     .then(() => res.status(204).json({}))
+    //     .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
 }
 
 async function getAllUser(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
-    
+
     const limit = req.query.size ? +req.query.size : 10;
-  const offset = req.query.page ? req.query.page * limit : 0;
-    await db.User.findAndCountAll({ limit, offset,order: [['createdAt', 'DESC']] })
+    const offset = req.query.page ? req.query.page * limit : 0;
+    await db.User.findAndCountAll({ limit, offset, order: [['createdAt', 'DESC']] })
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'USERS NOT FOUND' });
@@ -165,7 +167,7 @@ async function getAllSoftUser(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
     await db.User.findAll({
-        
+
         where: { deletedAt: { [Op.not]: null } },
         paranoid: false,
         order: [['deletedAt', 'DESC']]
@@ -222,7 +224,7 @@ async function updateUser(req, res) {
         });
 }
 
- const paginate = (query, schema) => {
+const paginate = (query, schema) => {
     let page = query.page ? query.page - 1 : 0;
     page = page < 0 ? 0 : page;
     let limit = parseInt(query.limit || 10);
@@ -233,33 +235,33 @@ async function updateUser(req, res) {
     delete query.limit;
     delete schema.limit;
     delete schema.page;
-    
+
     Object.keys(schema).forEach((key) => {
         console.log(key)
-      schema[key] && query[key] ? (where[key] = query[key]) : null;
+        schema[key] && query[key] ? (where[key] = query[key]) : null;
     });
     return {
-      where: where,
-      offset,
-      limit,
+        where: where,
+        offset,
+        limit,
     };
-  };
-  
+};
+
 
 async function getAllStudentPagination(req, res) {
-     // let token=req.headers.authorization
+    // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
-    
-    
 
-   const limit = req.query.size ? +req.query.size : 10;
-  const offset = req.query.page ? req.query.page * limit : 0;
-    await db.User.findAndCountAll(paginate(req.query,req.query))
+
+
+    const limit = req.query.size ? +req.query.size : 10;
+    const offset = req.query.page ? req.query.page * limit : 0;
+    await db.User.findAndCountAll(paginate(req.query, req.query))
         .then((obj) => {
             if (obj === null) {
                 res.status(400).json({ error: 'USER NOT FOUND' });
             }
-       
+
             res.status(200).json({
                 status: 'success',
                 message: 'status getted',
@@ -270,59 +272,59 @@ async function getAllStudentPagination(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
-async function forgetPassword (req,res){
-  try {
-    
-
-    const user = await db.User.findOne({ email: req.body.email });
-    if (!user)
-        return res.status(400).send("user with given email doesn't exist");
-
-      else {
-          const token = jwt.sign(
-              {
-                  userModelId: user.id,
-                  userModelN: user.name
-                  // isAdmin: userModel.isAdmin
-              },
-              secret,
-              { expiresIn: '1d' }
-          );
-    const link = `${process.env.BASE_URL}/password-reset/${user._id}/${token}`;
-    await sendEmail(user.email, "Password reset", link);
-
-  
-          }
+async function forgetPassword(req, res) {
+    try {
 
 
-    res.send("password reset link sent to your email account");
-} catch (error) {
-    res.send("An error occured");
-    console.log(error);
+        const user = await db.User.findOne({ email: req.body.email });
+        if (!user)
+            return res.status(400).send("user with given email doesn't exist");
+
+        else {
+            const token = jwt.sign(
+                {
+                    userModelId: user.id,
+                    userModelN: user.name
+                    // isAdmin: userModel.isAdmin
+                },
+                secret,
+                { expiresIn: '1d' }
+            );
+            const link = `${process.env.BASE_URL}/password-reset/${user._id}/${token}`;
+            await sendEmail(user.email, "Password reset", link);
+
+
+        }
+
+
+        res.send("password reset link sent to your email account");
+    } catch (error) {
+        res.send("An error occured");
+        console.log(error);
+    }
 }
-}
 
-async function resetPassword(req,res) {
-  try {
-   
+async function resetPassword(req, res) {
+    try {
 
-    const user = await User.findById(req.params.userId);
-    if (!user) return res.status(400).send("invalid link or expired");
-    const token =req.params.token
 
-    
-    if (!token) return res.status(400).send("Invalid link or expired");
+        const user = await User.findById(req.params.userId);
+        if (!user) return res.status(400).send("invalid link or expired");
+        const token = req.params.token
 
-    user.password = req.body.password;
-    await user.save();
 
-   
+        if (!token) return res.status(400).send("Invalid link or expired");
 
-    res.send("password reset sucessfully.");
-} catch (error) {
-    res.send("An error occured");
-    console.log(error);
-}
+        user.password = req.body.password;
+        await user.save();
+
+
+
+        res.send("password reset sucessfully.");
+    } catch (error) {
+        res.send("An error occured");
+        console.log(error);
+    }
 }
 module.exports = {
     register,

@@ -50,7 +50,7 @@ const Op = Sequelize.Op;
 //         });
 // }
 
-async function addNewOrder(req, res) {
+async function addNewOrder0(req, res) {
     try {
         const orderLines = req.body.orderLines;
         const customerId = req.params.id;
@@ -77,7 +77,7 @@ async function addNewOrder(req, res) {
         }
 
         const order = await db.Order.create({
-            status: req.body.status || 'Pending',
+            pending: Date.now(),
             total: req.body.total,
             discount: req.body.discount || 0,
             quantity: req.body.quantity,
@@ -102,6 +102,60 @@ async function addNewOrder(req, res) {
         return res.status(400).json({ error: 'Error creating order' });
     }
 }
+
+async function addNewOrder(req, res) {
+    try {
+        const orderData = req.body;
+        const customerId = orderData.customer_id;
+        const orderLines = orderData.orderLines;
+
+        const customer = await db.Customer.findOne({
+            where: {
+                id: customerId,
+            },
+        });
+
+        if (!customer) {
+            return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
+        }
+
+        const order = await db.Order.create({
+            pending: Date.now(),
+            total: orderData.total,
+            discount: orderData.discount || 0,
+            quantity: orderData.quantity,
+            total_discount: orderData.total_discount,
+            CustomerId: customer.id,
+        });
+
+        if (orderLines && orderLines.length > 0) {
+            for (let i = 0; i < orderLines.length; i++) {
+                const orderLine = orderLines[i];
+
+                const product = await db.Product.findOne({
+                    where: {
+                        name: orderLine.name,
+                    },
+                });
+
+                if (!product) {
+                    return res.status(400).json({ error: `PRODUCT NOT FOUND: ${orderLine.name}` });
+                }
+
+                await db.orderLine.create({
+                    customerId: customer.id,
+                    ProductId: product.id,
+                });
+            }
+        }
+
+        return res.status(201).json(order);
+    } catch (error) {
+        console.error('Error creating order:', error);
+        return res.status(400).json({ error: 'Error creating order' });
+    }
+}
+
 
 
 // async function updateOrder(req, res) {
@@ -144,7 +198,10 @@ async function updateOrder(req, res) {
             return res.status(400).json({ error: 'Order NOT FOUND' });
         }
 
-        order.status = req.body.status || order.status;
+        order.pending = req.body.pending ? Date.now() : order.pending;
+        order.canceled = req.body.canceled ? Date.now() : order.canceled;
+        order.delivered = req.body.delivered ? Date.now() : order.delivered;
+        order.expedied = req.body.expedied ? Date.now() : order.expedied;
         order.total = req.body.total || order.total;
         order.total_discount = req.body.total_discount || order.total_discount;
         order.quantity = req.body.quantity || order.quantity;
