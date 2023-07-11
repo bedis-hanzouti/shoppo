@@ -7,6 +7,7 @@ const Op = Sequelize.Op;
 
 
 async function addNewOrder(req, res) {
+    const t = await db.sequelize.transaction();
     try {
         const orderData = req.body;
         const customerId = orderData.customer_id;
@@ -16,9 +17,11 @@ async function addNewOrder(req, res) {
             where: {
                 id: customerId,
             },
+            transaction: t,
         });
 
         if (!customer) {
+            await t.rollback();
             return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
         }
 
@@ -29,6 +32,7 @@ async function addNewOrder(req, res) {
             quantity: orderData.quantity,
             total_discount: orderData.total_discount,
             CustomerId: customer.id,
+            transaction: t,
         });
 
         // Create the order lines
@@ -43,14 +47,17 @@ async function addNewOrder(req, res) {
                     total,
                     total_discount,
                     OrderId: order.id,
-                    ProductId: productId
+                    ProductId: productId,
+                    transaction: t,
                 });
             }
         }
+        await t.commit();
 
         return res.status(201).json({ message: 'Order created', order });
     } catch (error) {
         console.error('Error creating order:', error);
+        await t.rollback();
         return res.status(500).json({ error: 'Internal server error' });
     }
 }
@@ -148,14 +155,16 @@ async function getOneOrder(req, res) {
 // }
 
 async function getOrderByCustomer(req, res) {
+
     try {
         const customerId = req.params.id;
+        console.log(customerId);
 
         const orders = await db.Order.findAll({
             where: {
                 CustomerId: customerId,
             },
-            include: [db.Customer, db.OrderLine],
+            include: [db.OrderLine],
         });
 
         if (orders.length === 0) {
@@ -222,7 +231,7 @@ async function RestoreOneOrder(req, res) {
         .catch((err) => res.status(400).json('Error restoring ' + err.message));
 }
 
-async function getAllOrdersPagination(req, res) {
+async function getAllOrdersPagination0(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
 
@@ -245,6 +254,22 @@ async function getAllOrdersPagination(req, res) {
             });
         })
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
+}
+async function getAllOrdersPagination(req, res) {
+
+
+    const limit = req.query.size ? +req.query.size : 10;
+    const offset = req.query.page ? req.query.page * limit : 0;
+    await db.Order.findAll({ limit, offset, order: [['createdAt', 'DESC']] })
+        .then((obj) => {
+            res.status(200).json({
+                status: 'success',
+                message: 'status getted',
+                data: obj
+                //   user:doc.payload.userN
+            });
+        })
+        .catch((err) => res.status(400).json('Error  ' + err.message));
 }
 
 module.exports = {

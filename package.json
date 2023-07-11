@@ -19,6 +19,7 @@
         "express-jwt": "^6.0.0",
         "figlet": "^1.6.0",
         "fs": "^0.0.1-security",
+        "joi": "^17.9.2",
         "jsonwebtoken": "^8.5.1",
         "mongoose": "^5.10.19",
         "morgan": "^1.10.0",

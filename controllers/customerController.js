@@ -6,15 +6,16 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
 async function login(req, res) {
-    const user = await db.User.findOne({ where: { email: req.body.email }, attributes: { include: ['password'] } });
-
-    //console.log({user:user.name});
+    const user = await db.Customer.findOne({ where: { email: req.body.email }, attributes: { include: ['password'] } });
+    console.log({ body: user.password });
     const secret = process.env.secret || '123456azerty';
     if (!user) {
-        return res.status(400).send({ err: 'The User not found' });
+        return res.status(400).send({ err: 'The userModel not found' });
     }
-
-    if (user && bcrypt.compareSync(req.body.password, user.password)) {
+    const match = await bcrypt.compareSync(req.body.password, user.password)
+    console.log({ match: match });
+    if (user && match) {
+        console.log(user);
         const token = jwt.sign(
             {
                 userModelId: user.id,
@@ -25,7 +26,7 @@ async function login(req, res) {
             { expiresIn: '1d' }
         );
 
-        res.status(200).send({ user: user.email, token: token });
+        res.status(200).send({ user: user, token: token });
     } else {
         res.status(400).send({ err: 'password is wrong!' });
     }
@@ -59,28 +60,7 @@ async function register(req, res) {
         .catch((err) => res.status(400).json('Error creating ' + err.message));
 }
 
-async function addUser(req, res) {
-    // const {error}=validationSchema(req.body)
-    // if(error){
-    //   return res.status(404).send({error:error.details[0].message});
-    // }
 
-    Customer.sync({ force: false }).then(() => {
-        Customer.create({
-            firstname: req.body.firstname,
-            lastname: req.body.lastname,
-            email: req.body.email,
-            age: req.body.age,
-            phone: req.body.phone
-        })
-            .then((obj) => {
-                res.status(200).send(obj);
-            })
-            .catch((e) => {
-                res.status(400).json({ error: e.message });
-            });
-    });
-}
 
 async function deletUser(req, res) {
     await db.Customer.destroy({ where: { id: req.params.id } })

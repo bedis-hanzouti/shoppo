@@ -4,6 +4,7 @@ const sendEmail = require("../config/sendMail");
 const db = require('../models');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const userSchema = require('../config/joi_validation/userSchema')
 
 async function login(req, res) {
     const user = await db.User.findOne({ where: { email: req.body.email }, attributes: { include: ['password'] } });
@@ -33,13 +34,18 @@ async function login(req, res) {
 }
 
 async function register(req, res) {
+    const validationResult = userSchema.validate(req.body);
+    // console.log(validationResult);
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0] });
+    const t = await db.sequelize.transaction();
     const olduser = await db.User.findOne({ where: { email: req.body.email } });
     if (olduser) {
         return res.status(400).send({ err: 'Email Exist' });
     }
-    // const {error}=validationSchema(req.body)
-    // if(error){
-    //   return res.status(404).send({error:error.details[0].message});
+    // const { error } = validationSchema(req.body)
+    // if (error) {
+    //     return res.status(404).send({ error: error.details[0].message });
     // }
     await db.User.create({
         name: req.body.name,
@@ -48,16 +54,21 @@ async function register(req, res) {
         status: req.body.status,
         activity: req.body.activity,
         login: req.body.login,
-        password: bcrypt.hashSync(req.body.password, 10)
+        password: bcrypt.hashSync(req.body.password, 10),
+
     })
         .then((obj) => {
+            transaction: t
             res.json({
                 status: true,
                 message: 'success.',
                 date: obj
             });
         })
-        .catch((err) => res.status(400).json('Error creating ' + err.message));
+        .catch(async (err) => {
+            await t.rollback();
+            res.status(400).json('Error creating ' + err.message)
+        });
 }
 
 async function addUser(req, res) {
