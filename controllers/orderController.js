@@ -110,7 +110,7 @@ async function deleteOrder(req, res) {
 }
 
 async function getOneOrder(req, res) {
-    await db.Order.findOne({ where: { id: req.params.id }, include: db.Customer })
+    await db.Order.findOne({ where: { id: req.params.id }, include: [db.Customer, db.OrderLine] })
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'Order NOT FOUND' });
@@ -155,7 +155,7 @@ async function getOrderByCustomer(req, res) {
             where: {
                 CustomerId: customerId,
             },
-            include: db.Customer,
+            include: [db.Customer, db.OrderLine],
         });
 
         if (orders.length === 0) {
@@ -184,11 +184,10 @@ async function getOrderByCustomer(req, res) {
 
 
 async function getAllSoftOrders(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+
     await db.Order.findAll({
         where: { deletedAt: { [Op.not]: null } },
-        include: db.Customer,
+        include: [db.Customer, db.OrderLine],
         paranoid: false,
         order: [['deletedAt', 'DESC']]
     })
