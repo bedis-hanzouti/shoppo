@@ -2,8 +2,14 @@ const db = require('../models');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const fs = require('fs');
+const categorSchema = require('../config/joi_validation/categorySchema')
+
 
 async function addCategory(req, res) {
+    const validationResult = categorSchema.validate(req.body);
+    // console.log(validationResult);
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
     const file = req.file;
 
     if (!file) return res.status(400).send('No image in the request');
@@ -38,6 +44,8 @@ async function addCategory(req, res) {
 }
 
 async function deleteCategory(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
     await db.Category.destroy({ where: { id: req.params.id } })
         .then((obj) => {
             res.status(200).json({
@@ -49,6 +57,9 @@ async function deleteCategory(req, res) {
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 async function getOneCategory(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
+
     await db.Category.findOne({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
@@ -58,31 +69,15 @@ async function getOneCategory(req, res) {
                 status: 'success',
 
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
-// async function getAllCategory(req,res){
-//     // let token=req.headers.authorization
-//     // let doc =jwt.decode(token,({complete:true}))
-//     await db.Category.find().then(obj=>{
 
-//         res.status(200).json({
-//           status: "success",
-//           message: "status delated",
-//           data: obj,
-//         //   user:doc.payload.userN
-
-//         },)
-
-//     })
-//     .catch((err) => res.status(400).json("Error deleting " + err));
-//   }
 
 async function getAllCategory(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
@@ -99,8 +94,7 @@ async function getAllCategory(req, res) {
 }
 
 async function getAllSoftCategory(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+
     await db.Category.findAll({
         where: { deletedAt: { [Op.not]: null } },
         paranoid: false,
@@ -141,6 +135,9 @@ const paginate = (query, schema) => {
 };
 
 async function RestoreOneCategory(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
+
     await db.Category.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {
             if (obj == null) {
@@ -151,13 +148,17 @@ async function RestoreOneCategory(req, res) {
                 status: 'restored success',
 
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
 async function updateCategory(req, res) {
+    const validationResult = categorSchema.validate(req.body);
+    // console.log(validationResult);
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
     const file = req.file;
 
     if (file) {
@@ -165,34 +166,36 @@ async function updateCategory(req, res) {
         // const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
         const basePath = `/public/uploads/`;
         imagepath = `${basePath}${fileName}`;
-        await db.Category.findOne({
-            where: {
-                id: req.params.id
-            }
-        })
-            .then(async (obj) => {
-                if (obj == null) {
-                    res.status(400).json({ error: 'CATEGORY NOT FOUND' });
+        if (req.params.id)
+
+            await db.Category.findOne({
+                where: {
+                    id: req.params.id
                 }
-                obj.name = req.body.name || obj.name;
-                obj.description = req.body.description || obj.description;
-
-                obj.image = imagepath;
-                obj.url = fileName;
-
-                await obj.save();
-                res.status(200).send(obj);
             })
-            .catch(async (e) => {
-                await fs.unlink(file.path, (err) => {
-                    if (err) {
-                        console.log('error in deleting a file from uploads');
-                    } else {
-                        console.log('succesfully deleted from the uploads folder');
+                .then(async (obj) => {
+                    if (obj == null) {
+                        res.status(400).json({ error: 'CATEGORY NOT FOUND' });
                     }
+                    obj.name = req.body.name || obj.name;
+                    obj.description = req.body.description || obj.description;
+
+                    obj.image = imagepath;
+                    obj.url = fileName;
+
+                    await obj.save();
+                    res.status(200).send(obj);
+                })
+                .catch(async (e) => {
+                    await fs.unlink(file.path, (err) => {
+                        if (err) {
+                            console.log('error in deleting a file from uploads');
+                        } else {
+                            console.log('succesfully deleted from the uploads folder');
+                        }
+                    });
+                    res.status(400).json(e.message);
                 });
-                res.status(400).json(e.message);
-            });
     } else {
         await db.Category.findOne({
             where: {

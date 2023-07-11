@@ -6,6 +6,7 @@ const db = require('../models');
 const fs = require('fs');
 
 
+const productSchema = require('../config/joi_validation/productSchema')
 
 
 
@@ -13,6 +14,10 @@ const fs = require('fs');
 
 
 async function addProduct(req, res) {
+    const validationResult = productSchema.validate(req.body);
+
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
     const files = req.files;
 
     if (!files || Object.keys(files).length === 0) {
@@ -21,6 +26,9 @@ async function addProduct(req, res) {
 
     const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
     const categories = Array.isArray(req.body.categories) ? req.body.categories : [req.body.categories];
+
+    if (!req.body.categories) return res.status(400).send({ err: 'categories is empty' });
+
 
     try {
         const user = await db.User.findOne({ where: { id: req.body.UserId } });
@@ -78,8 +86,8 @@ async function addProduct(req, res) {
             return res.status(400).json({ error: 'User not found' });
         }
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
+        // console.error(error);
+        return res.status(500).json({ error: error });
     }
 }
 
@@ -87,6 +95,8 @@ async function addProduct(req, res) {
 
 
 async function deletProduct(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
+
     await db.Product.destroy({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
@@ -101,6 +111,8 @@ async function deletProduct(req, res) {
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 async function getOneProduct(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
+
     await db.Product.findOne({
         where: { id: req.params.id },
         include: [
@@ -148,37 +160,16 @@ async function getAllProduct(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
-// async function getAllProductByCategory(req, res) {
-//     console.log(req.body.categories)
 
-//     await db.Product.findAndCountAll({
-//         include: [
-//             {
-//                 model: db.Image
-//             },
-//             { model: db.Category, as: 'category', where: { id: { [Op.in]: req.body.categories } } }
-//         ],
-//         order: [['createdAt', 'DESC']]
-//     })
-//         .then((obj) => {
-//             if (obj == null) {
-//                 res.status(400).json({ error: 'PRODUCTS NOT FOUND' });
-//             }
-//             res.status(200).json({
-//                 status: 'success',
-
-//                 data: obj
-
-//             });
-//         })
-//         .catch((err) => res.status(400).json('Error getting ' + err.message));
-// }
 
 
 
 async function getAllProductByCategory(req, res) {
     const { categories } = req.params;
     console.log("categories", categories);
+
+    if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
+
 
     // const categories = [3, 2]
 
@@ -217,44 +208,12 @@ async function getAllProductByCategory(req, res) {
 
 
 
-// async function getAllBrandByCategory(req, res) {
 
-//     const categories = await db.Category.findAll({ where: { id: { [Op.in]: req.body.categories } } })
-//     if (!categories) {
-//         res.status(400).json({ error: 'Categories NOT FOUND' });
-//     }
-//     await db.Product.findAll({
-//         attributes: ['brand'],
-//         raw: true,
-//         group: ['brand'],
-//         include: [
-//             {
-//                 model: db.Category,
-//                 as: 'category',
-//                 where: { id: { [Op.in]: req.body.categories } },
-//                 attributes: ['name']
-//             }
-//         ],
-//         order: [['createdAt', 'DESC']],
-
-//     })
-//         .then((obj) => {
-//             if (obj == null) {
-//                 res.status(400).json({ error: 'BRANDS NOT FOUND' });
-//             }
-//             res.status(200).json({
-//                 status: 'success',
-
-//                 data: obj
-//                 //   user:doc.payload.userN
-//             });
-//         })
-//         .catch((err) => res.status(400).json('Error getting ' + err.message));
-// }
 
 async function getAllBrandByCategory(req, res) {
     const { categories } = req.params;
     console.log("categories", categories);
+    if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
     // const categories = [3, 2]
     try {
@@ -298,8 +257,8 @@ async function getAllBrandByCategory(req, res) {
 
 
 async function getAllProductByCategoryTopDix(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+    if (!req.params.id) return res.status(400).send({ err: 'categoriesId is empty' });
+
     await db.Product.findAndCountAll({
         include: [
             {
@@ -325,6 +284,12 @@ async function getAllProductByCategoryTopDix(req, res) {
 }
 
 async function updateProduct(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
+
+    const validationResult = producySchema.validate(req.body);
+    // console.log(validationResult);
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
     const file = req.file;
     let imagepath;
     console.log(file);
@@ -364,6 +329,8 @@ async function updateProduct(req, res) {
 async function updateCategoryOfProduct(req, res) {
     categories = req.body.category;
     // console.log(req.body.category);
+    if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
+
     if (categories.length > 0) {
         db.Product_category.destroy({ where: { ProductId: req.params.id } })
 
@@ -386,6 +353,10 @@ async function updateCategoryOfProduct(req, res) {
 }
 
 async function deleteCategoryOfProduct(req, res) {
+    if (!req.body.category_id) return res.status(400).send({ err: 'categoryId is empty' });
+    if (!req.body.product_id) return res.status(400).send({ err: 'productId is empty' });
+
+
     db.Product_category.findOne({
         where: {
             category_id: req.body.category_id,
@@ -414,14 +385,14 @@ async function getTopSellingProducts() {
         });
 
         const productIds = topSellingProducts.map(product => product.ProductId);
+        if (productIds)
+            return await db.Product.findAll({
+                where: {
+                    id: productIds
+                }
+            });
 
-        const products = await db.Product.findAll({
-            where: {
-                id: productIds
-            }
-        });
-
-        return products;
+        // return products;
     } catch (error) {
         console.error('Error retrieving top-selling products:', error);
         throw error;

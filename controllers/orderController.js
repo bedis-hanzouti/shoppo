@@ -1,17 +1,25 @@
 const db = require('../models');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const orderSchema = require('../config/joi_validation/orderSchema')
 
 
 
 
 
 async function addNewOrder(req, res) {
+    const validationResult = orderSchema.validate(req.body);
+    // console.log(validationResult);
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
+
+
     const t = await db.sequelize.transaction();
     try {
         const orderData = req.body;
         const customerId = orderData.customer_id;
         const orderLines = orderData.orderLines;
+        if (!customerId) return res.status(400).send({ err: 'customerId is empty' });
 
         const customer = await db.Customer.findOne({
             where: {
@@ -67,6 +75,12 @@ async function addNewOrder(req, res) {
 
 
 async function updateOrder(req, res) {
+    const validationResult = orderSchema.validate(req.body);
+    // console.log(validationResult);
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
+    if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
+
     try {
         const orderId = req.params.id;
 
@@ -117,6 +131,8 @@ async function deleteOrder(req, res) {
 }
 
 async function getOneOrder(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
+
     await db.Order.findOne({ where: { id: req.params.id }, include: [db.Customer, db.OrderLine] })
         .then((obj) => {
             if (obj == null) {
@@ -127,34 +143,17 @@ async function getOneOrder(req, res) {
                 totalPrice: obj.total,
 
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
-// async function getOrderByCustomer(req, res) {
-//     await db.Order.findAllAndCount({ where: { CustomerId: req.params.id }, include: db.Customer })
-//         .then((obj) => {
-//             if (obj == null) {
-//                 res.status(400).json({ error: 'Orders NOT FOUND' });
-//             }
-//             let totalAmount = 0;
 
-//             obj.forEach((order) => {
-//                 totalAmount += order.total;
-//             });
-//             res.status(200).json({
-//                 status: 'success',
-//                 totalPrice: totalAmount,
-//                 data: obj
-//                 //   user:doc.payload.userN
-//             });
-//         })
-//         .catch((err) => res.status(400).json('Error getting ' + err.message));
-// }
 
 async function getOrderByCustomer(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'customerId is empty' });
+
 
     try {
         const customerId = req.params.id;
@@ -215,6 +214,8 @@ async function getAllSoftOrders(req, res) {
 }
 
 async function RestoreOneOrder(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
+
     await db.Order.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {
             if (obj == null) {
