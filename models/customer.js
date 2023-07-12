@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
         status: { type: DataTypes.STRING, allowNull: true },
         activity: { type: DataTypes.STRING, allowNull: true },
         password: { type: DataTypes.STRING, allowNull: false },
-        login: { type: DataTypes.STRING, allowNull: false },
+        login: { type: DataTypes.STRING, allowNull: true },
 
 
 
