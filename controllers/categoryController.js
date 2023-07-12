@@ -6,10 +6,10 @@ const categorSchema = require('../config/joi_validation/categorySchema')
 
 
 async function addCategory(req, res) {
-    const validationResult = categorSchema.validate(req.body);
-    // console.log(validationResult);
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
+    // const validationResult = categorSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
     const file = req.file;
 
     if (!file) return res.status(400).send('No image in the request');
@@ -155,10 +155,10 @@ async function RestoreOneCategory(req, res) {
 }
 
 async function updateCategory(req, res) {
-    const validationResult = categorSchema.validate(req.body);
-    // console.log(validationResult);
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
+    // const validationResult = categorSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
     const file = req.file;
 
     if (file) {

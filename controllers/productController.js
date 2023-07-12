@@ -14,10 +14,10 @@ const productSchema = require('../config/joi_validation/productSchema')
 
 
 async function addProduct(req, res) {
-    const validationResult = productSchema.validate(req.body);
+    // const validationResult = productSchema.validate(req.body);
 
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
     const files = req.files;
 
     if (!files || Object.keys(files).length === 0) {
@@ -286,10 +286,10 @@ async function getAllProductByCategoryTopDix(req, res) {
 async function updateProduct(req, res) {
     if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
 
-    const validationResult = producySchema.validate(req.body);
-    // console.log(validationResult);
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
+    // const validationResult = producySchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
     const file = req.file;
     let imagepath;
     console.log(file);

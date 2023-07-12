@@ -36,10 +36,10 @@ async function login(req, res) {
 }
 
 async function register(req, res) {
-    const validationResult = userSchema.validate(req.body);
-    // console.log(validationResult);
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
+    // const validationResult = userSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
     if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
 
     const t = await db.sequelize.transaction();
@@ -176,11 +176,11 @@ async function getAllSoftUser(req, res) {
 
 async function updateUser(req, res) {
     // console.log(req.params.id);
-    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
-    const validationResult = userSchema.validate(req.body);
-    // console.log(validationResult);
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+    // const validationResult = userSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
 
     await db.User.findOne({
         where: {

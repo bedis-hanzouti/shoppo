@@ -58,10 +58,10 @@ async function addImage(req, res) {
 async function updateImage(req, res) {
     if (!req.params.id) return res.status(400).send({ err: 'categoryId is empty' });
 
-    const validationResult = imageSchema.validate(req.body);
-    // console.log(validationResult);
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
+    // const validationResult = imageSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
     const file = req.file;
 
     if (file) {
