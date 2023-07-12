@@ -1,24 +1,35 @@
 const db = require('../models');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const orderSchema = require('../config/joi_validation/orderSchema')
 
 
 
 
 
 async function addNewOrder(req, res) {
+    const validationResult = orderSchema.validate(req.body);
+    // console.log(validationResult);
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
+
+
+    const t = await db.sequelize.transaction();
     try {
         const orderData = req.body;
         const customerId = orderData.customer_id;
         const orderLines = orderData.orderLines;
+        if (!customerId) return res.status(400).send({ err: 'customerId is empty' });
 
         const customer = await db.Customer.findOne({
             where: {
                 id: customerId,
             },
+            transaction: t,
         });
 
         if (!customer) {
+            await t.rollback();
             return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
         }
 
@@ -29,6 +40,7 @@ async function addNewOrder(req, res) {
             quantity: orderData.quantity,
             total_discount: orderData.total_discount,
             CustomerId: customer.id,
+            transaction: t,
         });
 
         // Create the order lines
@@ -43,14 +55,17 @@ async function addNewOrder(req, res) {
                     total,
                     total_discount,
                     OrderId: order.id,
-                    ProductId: productId
+                    ProductId: productId,
+                    transaction: t,
                 });
             }
         }
+        await t.commit();
 
         return res.status(201).json({ message: 'Order created', order });
     } catch (error) {
         console.error('Error creating order:', error);
+        await t.rollback();
         return res.status(500).json({ error: 'Internal server error' });
     }
 }
@@ -60,6 +75,12 @@ async function addNewOrder(req, res) {
 
 
 async function updateOrder(req, res) {
+    const validationResult = orderSchema.validate(req.body);
+    // console.log(validationResult);
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
+    if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
+
     try {
         const orderId = req.params.id;
 
@@ -110,6 +131,8 @@ async function deleteOrder(req, res) {
 }
 
 async function getOneOrder(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
+
     await db.Order.findOne({ where: { id: req.params.id }, include: [db.Customer, db.OrderLine] })
         .then((obj) => {
             if (obj == null) {
@@ -120,42 +143,27 @@ async function getOneOrder(req, res) {
                 totalPrice: obj.total,
 
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
-// async function getOrderByCustomer(req, res) {
-//     await db.Order.findAllAndCount({ where: { CustomerId: req.params.id }, include: db.Customer })
-//         .then((obj) => {
-//             if (obj == null) {
-//                 res.status(400).json({ error: 'Orders NOT FOUND' });
-//             }
-//             let totalAmount = 0;
 
-//             obj.forEach((order) => {
-//                 totalAmount += order.total;
-//             });
-//             res.status(200).json({
-//                 status: 'success',
-//                 totalPrice: totalAmount,
-//                 data: obj
-//                 //   user:doc.payload.userN
-//             });
-//         })
-//         .catch((err) => res.status(400).json('Error getting ' + err.message));
-// }
 
 async function getOrderByCustomer(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'customerId is empty' });
+
+
     try {
         const customerId = req.params.id;
+        console.log(customerId);
 
         const orders = await db.Order.findAll({
             where: {
                 CustomerId: customerId,
             },
-            include: [db.Customer, db.OrderLine],
+            include: [db.OrderLine],
         });
 
         if (orders.length === 0) {
@@ -206,6 +214,8 @@ async function getAllSoftOrders(req, res) {
 }
 
 async function RestoreOneOrder(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
+
     await db.Order.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {
             if (obj == null) {
@@ -222,7 +232,7 @@ async function RestoreOneOrder(req, res) {
         .catch((err) => res.status(400).json('Error restoring ' + err.message));
 }
 
-async function getAllOrdersPagination(req, res) {
+async function getAllOrdersPagination0(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
 
@@ -245,6 +255,22 @@ async function getAllOrdersPagination(req, res) {
             });
         })
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
+}
+async function getAllOrdersPagination(req, res) {
+
+
+    const limit = req.query.size ? +req.query.size : 10;
+    const offset = req.query.page ? req.query.page * limit : 0;
+    await db.Order.findAll({ limit, offset, order: [['createdAt', 'DESC']] })
+        .then((obj) => {
+            res.status(200).json({
+                status: 'success',
+                message: 'status getted',
+                data: obj
+                //   user:doc.payload.userN
+            });
+        })
+        .catch((err) => res.status(400).json('Error  ' + err.message));
 }
 
 module.exports = {

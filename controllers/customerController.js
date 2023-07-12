@@ -4,17 +4,21 @@ const sendEmail = require("../config/sendMail");
 const db = require('../models');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const customerSchema = require('../config/joi_validation/customerSchema')
+
 
 async function login(req, res) {
-    const user = await db.User.findOne({ where: { email: req.body.email }, attributes: { include: ['password'] } });
-
-    //console.log({user:user.name});
+    if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
+    const user = await db.Customer.findOne({ where: { email: req.body.email }, attributes: { include: ['password'] } });
+    console.log({ body: user.password });
     const secret = process.env.secret || '123456azerty';
     if (!user) {
-        return res.status(400).send({ err: 'The User not found' });
+        return res.status(400).send({ err: 'The userModel not found' });
     }
-
-    if (user && bcrypt.compareSync(req.body.password, user.password)) {
+    const match = await bcrypt.compareSync(req.body.password, user.password)
+    console.log({ match: match });
+    if (user && match) {
+        console.log(user);
         const token = jwt.sign(
             {
                 userModelId: user.id,
@@ -25,21 +29,24 @@ async function login(req, res) {
             { expiresIn: '1d' }
         );
 
-        res.status(200).send({ user: user.email, token: token });
+        res.status(200).send({ user: user, token: token });
     } else {
         res.status(400).send({ err: 'password is wrong!' });
     }
 }
 
 async function register(req, res) {
+    const validationResult = customerSchema.validate(req.body);
+    // console.log(validationResult);
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
+    if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
+
     const olduser = await db.Customer.findOne({ where: { email: req.body.email } });
     if (olduser) {
         return res.status(400).send({ err: 'Email Exist' });
     }
-    // const {error}=validationSchema(req.body)
-    // if(error){
-    //   return res.status(404).send({error:error.details[0].message});
-    // }
+
     await db.Customer.create({
         name: req.body.name,
         email: req.body.email,
@@ -59,30 +66,11 @@ async function register(req, res) {
         .catch((err) => res.status(400).json('Error creating ' + err.message));
 }
 
-async function addUser(req, res) {
-    // const {error}=validationSchema(req.body)
-    // if(error){
-    //   return res.status(404).send({error:error.details[0].message});
-    // }
 
-    Customer.sync({ force: false }).then(() => {
-        Customer.create({
-            firstname: req.body.firstname,
-            lastname: req.body.lastname,
-            email: req.body.email,
-            age: req.body.age,
-            phone: req.body.phone
-        })
-            .then((obj) => {
-                res.status(200).send(obj);
-            })
-            .catch((e) => {
-                res.status(400).json({ error: e.message });
-            });
-    });
-}
 
 async function deletUser(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
     await db.Customer.destroy({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
@@ -98,6 +86,9 @@ async function deletUser(req, res) {
 }
 
 async function getOneUser(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
+
     await db.Customer.findOne({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
@@ -114,6 +105,8 @@ async function getOneUser(req, res) {
 }
 
 async function RestoreOneUser(req, res) {
+    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
     await db.Customer.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {
             if (obj == null) {
@@ -146,12 +139,11 @@ async function getAllUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err.message));
+        .catch((err) => res.status(400).json('Error  ' + err.message));
 }
 
 async function getAllSoftUser(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+
     await db.Customer.findAll({
 
         where: { deletedAt: { [Op.not]: null } },
@@ -163,16 +155,22 @@ async function getAllSoftUser(req, res) {
                 status: 'success',
                 message: 'status delated',
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err.message));
+        .catch((err) => res.status(400).json('Error  ' + err.message));
 }
 
 
 
 async function updateUser(req, res) {
-    console.log(req.params.id);
+    const validationResult = categorSchema.validate(req.body);
+    // console.log(validationResult);
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
+    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
+
     await db.Customer.findOne({
         where: {
             id: req.params.id
@@ -223,8 +221,7 @@ const paginate = (query, schema) => {
 
 
 async function getAllStudentPagination(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
@@ -234,10 +231,10 @@ async function getAllStudentPagination(req, res) {
                 status: 'success',
                 message: 'status getted',
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err.message));
+        .catch((err) => res.status(400).json('Error  ' + err.message));
 }
 
 async function RestoreOneCategory(req, res) {
@@ -260,6 +257,8 @@ async function RestoreOneCategory(req, res) {
 }
 
 async function forgetPassword(req, res) {
+    if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
+
     try {
 
 
@@ -272,7 +271,7 @@ async function forgetPassword(req, res) {
                 {
                     userModelId: user.id,
                     userModelN: user.name
-                    // isAdmin: userModel.isAdmin
+
                 },
                 secret,
                 { expiresIn: '1d' }
@@ -292,6 +291,8 @@ async function forgetPassword(req, res) {
 }
 
 async function resetPassword(req, res) {
+    if (!req.params.userId) return res.status(400).send({ err: 'userId is empty' });
+
     try {
 
 

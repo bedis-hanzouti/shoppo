@@ -33,16 +33,18 @@ app.use("/public/uploads", express.static(__dirname + "/public/uploads"));
 const categoriesRoutes = require("./routes/categories");
 const productsRoutes = require("./routes/products");
 const usersRoutes = require("./routes/users");
+const customerssRoutes = require("./routes/customer");
 const imagesRoutes = require("./routes/image");
-// const ordersRoutes = require("./routes/orders");
+const ordersRoutes = require("./routes/orders");
 
 const api = process.env.API_URL;
 
 app.use(`${api}/category`, categoriesRoutes);
 app.use(`${api}/products`, productsRoutes);
 app.use(`${api}/user`, usersRoutes);
+app.use(`${api}/customer`, customerssRoutes);
 app.use(`${api}/image`, imagesRoutes);
-// app.use(`${api}/orders`, ordersRoutes);
+app.use(`${api}/orders`, ordersRoutes);
 
 
 
