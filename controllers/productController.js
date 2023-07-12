@@ -279,7 +279,7 @@ async function getAllProductByCategoryTopDix(req, res) {
             attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
             include: [{
-                model: db.Product,                 // raw: true,
+                model: db.Product, include: [{ model: db.Image }],                 // raw: true,
 
 
             }],
@@ -411,7 +411,12 @@ async function getTopSellingProducts() {
             return await db.Product.findAll({
                 where: {
                     id: productIds
-                }
+                },
+                include: [
+                    {
+                        model: db.Image
+                    }
+                ],
             });
 
         // return products;
