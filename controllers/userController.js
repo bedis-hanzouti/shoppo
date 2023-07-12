@@ -40,7 +40,7 @@ async function register(req, res) {
     // // console.log(validationResult);
     // if (validationResult.error)
     //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
+    // if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
 
     const t = await db.sequelize.transaction();
     const olduser = await db.User.findOne({ where: { email: req.body.email } });
@@ -75,7 +75,7 @@ async function register(req, res) {
 
 
 async function deletUser(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
 
     await db.User.destroy({ where: { id: req.params.id } })
         .then((obj) => {
@@ -92,7 +92,7 @@ async function deletUser(req, res) {
 }
 
 async function getOneUser(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
 
     await db.User.findOne({ where: { id: req.params.id } })
         .then((obj) => {
@@ -110,7 +110,7 @@ async function getOneUser(req, res) {
 }
 
 async function RestoreOneUser(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
 
     await db.User.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {

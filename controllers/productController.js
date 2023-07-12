@@ -95,7 +95,7 @@ async function addProduct(req, res) {
 
 
 async function deletProduct(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
 
     await db.Product.destroy({ where: { id: req.params.id } })
         .then((obj) => {
@@ -169,7 +169,7 @@ async function getAllProductByCategory(req, res) {
     const { categories } = req.params;
     console.log("categories", categories);
 
-    if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
+    // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
 
     // const categories = [3, 2]
@@ -216,7 +216,7 @@ async function getAllProductByCategory(req, res) {
 async function getAllBrandByCategory(req, res) {
     const { categories } = req.params;
     console.log("categories", categories);
-    if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
+    // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
     // const categories = [3, 2]
     try {
@@ -260,7 +260,7 @@ async function getAllProductByCategoryTopDix(req, res) {
     const { categories } = req.params;
     console.log("categories", categories);
 
-    if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
+    // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
 
     // const categories = [3, 2]

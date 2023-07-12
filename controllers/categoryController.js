@@ -44,7 +44,7 @@ async function addCategory(req, res) {
 }
 
 async function deleteCategory(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
 
     await db.Category.destroy({ where: { id: req.params.id } })
         .then((obj) => {
@@ -57,7 +57,7 @@ async function deleteCategory(req, res) {
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 async function getOneCategory(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
 
 
     await db.Category.findOne({ where: { id: req.params.id } })
@@ -135,7 +135,7 @@ const paginate = (query, schema) => {
 };
 
 async function RestoreOneCategory(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
 
 
     await db.Category.findOne({ where: { id: req.params.id }, paranoid: false })
