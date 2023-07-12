@@ -117,7 +117,7 @@ async function getOneProduct(req, res) {
         where: { ProductId: req.params.id },
         include: [{
             model: db.Product, include: [{ model: db.Image, attributes: ['url'] }],
-            raw: true,
+            // raw: true,
             order: [['createdAt', 'DESC']]
 
 
@@ -182,7 +182,7 @@ async function getAllProductByCategory(req, res) {
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
             include: [{
                 model: db.Product, include: [{ model: db.Image, attributes: ['url'] }],
-                raw: true,
+                // raw: true,
 
             }],
             order: [['createdAt', 'DESC']]
@@ -234,7 +234,7 @@ async function getAllBrandByCategory(req, res) {
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
             include: [{
                 model: db.Product, attributes: ['brand'],
-                raw: true,
+                // raw: true,
                 group: ['brand'],
             }],
         });
@@ -273,7 +273,7 @@ async function getAllProductByCategoryTopDix(req, res) {
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
             include: [{
                 model: db.Product,
-                raw: true,
+                // raw: true,
 
             }],
             order: [['createdAt', 'DESC']],
