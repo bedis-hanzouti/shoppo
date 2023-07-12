@@ -1,22 +1,22 @@
 {
     "development": {
-        "username": "postgres",
-        "password": "toor",
-        "database": "commerce",
+        "username": "hbtn_H3B_admin",
+        "password": "CPWp1gEEhj",
+        "database": "hbtn_commerce",
         "host": "127.0.0.1",
-        "dialect": "postgres"
+        "dialect": "mysql"
     },
     "test": {
-        "username": "postgres",
-        "password": "toor",
-        "database": "commerce",
+        "username": "hbtn_H3B_admin",
+        "password": "CPWp1gEEhj",
+        "database": "hbtn_commerce",
         "host": "127.0.0.1",
-        "dialect": "postgres"
+        "dialect": "mysql"
     },
     "production": {
-        "username": "root",
-        "password": null,
-        "database": "database_production",
+        "username": "hbtn_H3B_admin",
+        "password": "CPWp1gEEhj",
+        "database": "hbtn_commerce",
         "host": "127.0.0.1",
         "dialect": "mysql"
     }
