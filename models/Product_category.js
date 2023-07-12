@@ -8,9 +8,6 @@ module.exports = (sequelize, DataTypes) => {
                 autoIncrement: true,
                 allowNull: false
             }
-
-            // categoryId: { type: DataTypes.INTEGER, allowNull: false },
-            // productId: { type: DataTypes.INTEGER, allowNull: false },
         },
         {
             sequelize,
@@ -20,22 +17,19 @@ module.exports = (sequelize, DataTypes) => {
                     exclude: ['createdAt', 'updatedAt', 'deletedAt']
                 }
             }
-
-            // If you want to give a custom name to the deletedAt column
-            // deletedAt: 'destroyTime'
         }
     );
+
     Product_category.associate = (models) => {
         Product_category.belongsTo(models.Product, {
-            foreignKey: {
-                allowNull: false
-            }
+            foreignKey: 'ProductId', // Specify the foreign key column name
+            allowNull: false
         });
         Product_category.belongsTo(models.Category, {
-            foreignKey: {
-                allowNull: false
-            }
+            foreignKey: 'CategoryId', // Specify the foreign key column name
+            allowNull: false
         });
     };
+
     return Product_category;
 };
