@@ -1,23 +1,23 @@
 {
     "development": {
-        "username": "hbtn_H3B_admin",
-        "password": "ykyBhfNEZ1",
-        "database": "hbtn_commerce",
-        "host": "www.h3b.tn",
-        "dialect": "mysql"
+        "username": "postgres",
+        "password": "toor",
+        "database": "commerce",
+        "host": "127.0.0.1",
+        "dialect": "postgres"
     },
     "test": {
-        "username": "hbtn_H3B_admin",
-        "password": "ykyBhfNEZ1",
-        "database": "hbtn_commerce",
-        "host": "www.h3b.tn",
-        "dialect": "mysql"
+        "username": "postgres",
+        "password": "toor",
+        "database": "commerce",
+        "host": "127.0.0.1",
+        "dialect": "postgres"
     },
     "production": {
-        "username": "hbtn_H3B_admin",
-        "password": "ykyBhfNEZ1",
-        "database": "hbtn_commerce",
-        "host": "www.h3b.tn",
+        "username": "root",
+        "password": null,
+        "database": "database_production",
+        "host": "127.0.0.1",
         "dialect": "mysql"
     }
 }

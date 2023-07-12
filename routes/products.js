@@ -15,7 +15,7 @@ route.get('/:id', productController.getOneProduct)
 route.get('/topdix/category/:id', productController.getAllProductByCategoryTopDix)
 route.get('/brand/:categories', productController.getAllBrandByCategory)
 route.get('/category/:categories', productController.getAllProductByCategory)
-route.get('/topszlling', productController.getTopSellingProducts)
+route.get('/topselling', productController.getTopSellingProducts)
 route.delete('/:id', productController.deletProduct)
 
 module.exports = route
