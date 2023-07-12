@@ -32,10 +32,13 @@ async function addProduct(req, res) {
 
     try {
         const user = await db.User.findOne({ where: { id: req.body.UserId } });
+        if (!user) {
+            return res.status(400).json({ error: 'user not found' });
+        }
         const category = await db.Category.findAll({ where: { id: { [Op.in]: categories } } });
 
         if (category.length === 0) {
-            return res.status(400).json([]);
+            return res.status(400).json({ error: 'categorie not found' });
         }
 
         if (user) {
