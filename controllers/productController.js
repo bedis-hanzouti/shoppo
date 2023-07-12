@@ -281,7 +281,7 @@ async function getAllProductByCategoryTopDix(req, res) {
         });
 
         if (!products || products.length === 0) {
-            return res.status(400).json({ error: 'No products found for the specified categories' });
+            return res.status(400).json({ error: 'No productss found for the specified categories' });
         }
 
         return res.status(200).json({
@@ -289,6 +289,8 @@ async function getAllProductByCategoryTopDix(req, res) {
             data: products,
         });
     } catch (error) {
+
+
         console.error('Error getting products:', error);
         return res.status(400).json({ error: 'Error getting products' });
     }
