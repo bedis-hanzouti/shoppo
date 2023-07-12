@@ -197,7 +197,7 @@ async function RestoreOneImage(req, res) {
 }
 
 async function getAllImage(req, res) {
-    await db.Image.findAndCountAll()
+    await db.Image.findAll()
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'NO IMAGE FOUND' });

@@ -87,7 +87,7 @@ async function addProduct(req, res) {
         }
     } catch (error) {
         // console.error(error);
-        return res.status(500).json({ error: error });
+        return res.status(500).json({ error: error.message });
     }
 }
 
@@ -139,7 +139,7 @@ async function getOneProduct(req, res) {
 async function getAllProduct(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
-    await db.Product.findAndCountAll({
+    await db.Product.findAll({
         include: [
             {
                 model: db.Image
@@ -178,7 +178,7 @@ async function getAllProductByCategory(req, res) {
         const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
 
         const products = await db.Product_category.findAll({
-
+            attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
             include: [{
                 model: db.Product, include: [{ model: db.Image }],
@@ -188,17 +188,18 @@ async function getAllProductByCategory(req, res) {
             order: [['createdAt', 'DESC']]
         });
 
+
         if (!products || products.length === 0) {
             return res.status(400).json({ error: 'No products found for the specified categories' });
         }
 
         return res.status(200).json({
             status: 'success',
-            data: products,
+            data: await products.map(proudt => proudt.Product),
         });
     } catch (error) {
         console.error('Error getting products:', error);
-        return res.status(400).json({ error: 'Error getting products' });
+        return res.status(400).json({ error: error.message });
     }
 }
 
@@ -230,7 +231,7 @@ async function getAllBrandByCategory(req, res) {
         }
 
         const brands = await db.Product_category.findAll({
-
+            attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
             include: [{
                 model: db.Product, attributes: ['brand'],
@@ -245,13 +246,15 @@ async function getAllBrandByCategory(req, res) {
 
         return res.status(200).json({
             status: 'success',
-            data: brands,
+            data: await brands.map(proudt => proudt.Product),
+
         });
     } catch (error) {
         console.error('Error getting brands:', error);
-        return res.status(400).json({ error: error });
+        return res.status(400).json({ error: error.message });
     }
 }
+
 
 
 
@@ -259,42 +262,46 @@ async function getAllBrandByCategory(req, res) {
 async function getAllProductByCategoryTopDix(req, res) {
     const { categories } = req.params;
     console.log("categories", categories);
-
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
-
     // const categories = [3, 2]
-
     try {
         const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+        const cat = await db.Category.findAll({
+            where: { id: { [db.Sequelize.Op.in]: categoryIds } },
+        });
 
-        const products = await db.Product_category.findAll({
+        if (!cat) {
+            return res.status(400).json({ error: 'Categories NOT FOUND' });
+        }
 
+        const p = await db.Product_category.findAll({
+            attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
             include: [{
-                model: db.Product,
-                // raw: true,
+                model: db.Product,                 // raw: true,
+
 
             }],
             order: [['createdAt', 'DESC']],
             limit: 10
         });
 
-        if (!products || products.length === 0) {
-            return res.status(400).json({ error: 'No productss found for the specified categories' });
+        if (!p || p.length === 0) {
+            return res.status(400).json({ error: 'Products NOT FOUND' });
         }
 
         return res.status(200).json({
             status: 'success',
-            data: products,
+            data: await p.map(proudt => proudt.Product),
+
         });
     } catch (error) {
-
-
         console.error('Error getting products:', error);
-        return res.status(400).json({ error: 'Error getting products' });
+        return res.status(400).json({ error: error.message });
     }
 }
+
 
 async function updateProduct(req, res) {
     if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
@@ -361,7 +368,8 @@ async function updateCategoryOfProduct(req, res) {
                 });
                 res.status(200).send({ res: 'category updated', data: categoriesProduct });
             })
-            .catch((error) => console.log(error.message));
+            .catch((err) => res.status(400).json('Error getting ' + err.message));
+
     }
 }
 
@@ -383,7 +391,8 @@ async function deleteCategoryOfProduct(req, res) {
                 .then(() => {
                     res.status(200).send({ res: 'category deleted' });
                 })
-                .catch((error) => console.log(error.message));
+                .catch((err) => res.status(400).json('Error getting ' + err.message));
+
         }
     });
 }
@@ -408,6 +417,7 @@ async function getTopSellingProducts() {
         // return products;
     } catch (error) {
         console.error('Error retrieving top-selling products:', error);
+
         throw error;
     }
 }
