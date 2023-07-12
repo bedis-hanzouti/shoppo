@@ -56,7 +56,7 @@ async function addImage(req, res) {
 }
 
 async function updateImage(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'categoryId is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'categoryId is empty' });
 
     // const validationResult = imageSchema.validate(req.body);
     // // console.log(validationResult);
@@ -127,7 +127,7 @@ async function updateImage(req, res) {
     }
 }
 async function deletImage(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'imageId is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'imageId is empty' });
 
     await db.Image.destroy({ where: { id: req.params.id } })
         .then((obj) => {
@@ -143,7 +143,7 @@ async function deletImage(req, res) {
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 async function getOneImage(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'imageId is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'imageId is empty' });
 
     await db.Image.findOne({ where: { id: req.params.id } })
         .then((obj) => {
@@ -179,7 +179,7 @@ async function getAllSoftImage(req, res) {
 }
 
 async function RestoreOneImage(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'imageId is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'imageId is empty' });
 
     await db.Image.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {
