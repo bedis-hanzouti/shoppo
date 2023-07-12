@@ -113,14 +113,15 @@ async function deletProduct(req, res) {
 async function getOneProduct(req, res) {
     if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
 
-    await db.Product.findOne({
-        where: { id: req.params.id },
-        include: [
-            {
-                model: db.Category,
-                as: 'category'
-            }
-        ]
+    await db.Product_category.findOne({
+        where: { ProductId: req.params.id },
+        include: [{
+            model: db.Product, include: [{ model: db.Image, attributes: ['url'] }],
+            raw: true,
+            order: [['createdAt', 'DESC']]
+
+
+        }],
     })
         .then((obj) => {
             if (obj == null) {
@@ -176,17 +177,15 @@ async function getAllProductByCategory(req, res) {
     try {
         const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
 
-        const products = await db.Product.findAll({
-            include: [
-                {
-                    model: db.Image,
-                },
-                {
-                    model: db.Category,
-                    as: 'category',
-                    where: { id: { [db.Sequelize.Op.in]: categoryIds } }, // Use the categoryIds array in the where clause
-                },
-            ],
+        const products = await db.Product_category.findAll({
+
+            where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
+            include: [{
+                model: db.Product, include: [{ model: db.Image, attributes: ['url'] }],
+                raw: true,
+
+            }],
+            order: [['createdAt', 'DESC']]
         });
 
         if (!products || products.length === 0) {
@@ -202,6 +201,10 @@ async function getAllProductByCategory(req, res) {
         return res.status(400).json({ error: 'Error getting products' });
     }
 }
+
+
+
+
 
 
 
@@ -226,19 +229,14 @@ async function getAllBrandByCategory(req, res) {
             return res.status(400).json({ error: 'Categories NOT FOUND' });
         }
 
-        const brands = await db.Product.findAll({
-            attributes: ['brand'],
-            raw: true,
-            group: ['brand'],
-            include: [
-                {
-                    model: db.Category,
-                    as: 'category',
-                    where: { id: { [db.Sequelize.Op.in]: categoryIds } },
-                    attributes: ['name'],
-                },
-            ],
-            order: [['createdAt', 'DESC']],
+        const brands = await db.Product_category.findAll({
+
+            where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
+            include: [{
+                model: db.Product, attributes: ['brand'],
+                raw: true,
+                group: ['brand'],
+            }],
         });
 
         if (!brands || brands.length === 0) {
@@ -251,36 +249,49 @@ async function getAllBrandByCategory(req, res) {
         });
     } catch (error) {
         console.error('Error getting brands:', error);
-        return res.status(400).json({ error: 'Error getting brands' });
+        return res.status(400).json({ error: error });
     }
 }
 
 
+
+
 async function getAllProductByCategoryTopDix(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'categoriesId is empty' });
+    const { categories } = req.params;
+    console.log("categories", categories);
 
-    await db.Product.findAndCountAll({
-        include: [
-            {
-                model: db.Image
-            },
-            { model: db.Category, as: 'category', where: { id: req.params.id } }
-        ],
-        order: [['createdAt', 'DESC']],
-        limit: 10
-    })
-        .then((obj) => {
-            if (obj == null) {
-                res.status(400).json({ error: 'PRODUCTS NOT FOUND' });
-            }
-            res.status(200).json({
-                status: 'success',
+    if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
-                data: obj
-                //   user:doc.payload.userN
-            });
-        })
-        .catch((err) => res.status(400).json('Error getting ' + err.message));
+
+    // const categories = [3, 2]
+
+    try {
+        const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+
+        const products = await db.Product_category.findAll({
+
+            where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
+            include: [{
+                model: db.Product,
+                raw: true,
+
+            }],
+            order: [['createdAt', 'DESC']],
+            limit: 10
+        });
+
+        if (!products || products.length === 0) {
+            return res.status(400).json({ error: 'No products found for the specified categories' });
+        }
+
+        return res.status(200).json({
+            status: 'success',
+            data: products,
+        });
+    } catch (error) {
+        console.error('Error getting products:', error);
+        return res.status(400).json({ error: 'Error getting products' });
+    }
 }
 
 async function updateProduct(req, res) {
