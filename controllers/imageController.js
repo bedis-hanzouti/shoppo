@@ -2,15 +2,14 @@ const db = require('../models');
 
 const Sequelize = require('sequelize');
 const fs = require('fs');
-const imageSchema = require('../config/joi_validation/imageSchema')
-
+const imageSchema = require('../config/joi_validation/imageSchema');
 
 const Op = Sequelize.Op;
 async function addImage(req, res) {
-    const validationResult = categorSchema.validate(req.body);
-    // console.log(validationResult);
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
+    // const validationResult = categorSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
     const file = req.files;
     console.log(file);
     if (!file) return res.status(400).send('No image in the request');
@@ -33,9 +32,6 @@ async function addImage(req, res) {
                     ProductId: req.body.ProductId
                 })
 
-
-
-
                     .then((obj) => {
                         return res.status(200).send(obj);
                     })
@@ -48,16 +44,12 @@ async function addImage(req, res) {
                                     console.log('succesfully deleted from the uploads folder');
                                 }
                             });
-                        })
+                        });
 
                         return res.status(400).send(e.message);
-
                     });
             });
-
-        }
-        )
-
+        });
     } else {
         res.status(400).json({ error: 'product not found' });
     }
@@ -162,14 +154,12 @@ async function getOneImage(req, res) {
                 status: 'success',
 
                 data: obj
-
             });
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
 async function getAllSoftImage(req, res) {
-
     await db.Image.findAll({
         where: { deletedAt: { [Op.not]: null } },
         paranoid: false,
@@ -183,7 +173,6 @@ async function getAllSoftImage(req, res) {
                 status: 'success',
                 message: 'status delated',
                 data: obj
-
             });
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
@@ -202,14 +191,12 @@ async function RestoreOneImage(req, res) {
                 status: 'restored success',
 
                 data: obj
-
             });
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
 async function getAllImage(req, res) {
-
     await db.Image.findAndCountAll()
         .then((obj) => {
             if (obj == null) {
@@ -219,7 +206,6 @@ async function getAllImage(req, res) {
                 status: 'success',
 
                 data: obj
-
             });
         })
         .catch((err) => res.status(400).json('Error  ' + err.message));
