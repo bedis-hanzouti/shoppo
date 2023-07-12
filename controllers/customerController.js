@@ -130,7 +130,7 @@ async function getAllUser(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.Customer.findAndCountAll({ limit, offset, order: [['createdAt', 'DESC']] })
+    await db.Customer.findAll({ limit, offset, order: [['createdAt', 'DESC']] })
         .then((obj) => {
             res.status(200).json({
                 status: 'success',
@@ -225,7 +225,7 @@ async function getAllStudentPagination(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.Customer.findAndCountAll({ attributes: { exclude: ['password'] } }, paginate(req.query, req.query))
+    await db.Customer.findAll({ attributes: { exclude: ['password'] } }, paginate(req.query, req.query))
         .then((obj) => {
             res.status(200).json({
                 status: 'success',

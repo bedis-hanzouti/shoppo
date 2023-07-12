@@ -66,7 +66,7 @@ async function addNewOrder(req, res) {
     } catch (error) {
         console.error('Error creating order:', error);
         await t.rollback();
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: error.message });
     }
 }
 
@@ -79,7 +79,7 @@ async function updateOrder(req, res) {
     // // console.log(validationResult);
     // if (validationResult.error)
     //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
 
     try {
         const orderId = req.params.id;
@@ -238,7 +238,7 @@ async function getAllOrdersPagination0(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.Order.findAndCountAll({ include: db.Customer }, paginate(req.query, req.query))
+    await db.Order.findAll({ include: db.Customer }, paginate(req.query, req.query))
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'Orders NOT FOUND' });

@@ -12,7 +12,7 @@ route.put('/:id', configMedia.uploadOptions.single('images', 5), productControll
 route.put('/update/:id', productController.updateCategoryOfProduct)
 route.get('/', productController.getAllProduct)
 route.get('/:id', productController.getOneProduct)
-route.get('/topdix/category/:id', productController.getAllProductByCategoryTopDix)
+route.get('/topdix/category/:categories', productController.getAllProductByCategoryTopDix)
 route.get('/brand/:categories', productController.getAllBrandByCategory)
 route.get('/category/:categories', productController.getAllProductByCategory)
 route.get('/topselling', productController.getTopSellingProducts)

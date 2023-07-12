@@ -13,7 +13,7 @@ async function getAllOrderLinesPagination(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.OrderLine.findAndCountAll({ include: db.Customer }, paginate(req.query, req.query))
+    await db.OrderLine.findAll({ include: db.Customer }, paginate(req.query, req.query))
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'OrderLines NOT FOUND' });

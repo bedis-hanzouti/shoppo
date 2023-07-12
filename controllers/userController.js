@@ -135,7 +135,7 @@ async function getAllUser(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.User.findAndCountAll({ limit, offset, order: [['createdAt', 'DESC']] })
+    await db.User.findAll({ limit, offset, order: [['createdAt', 'DESC']] })
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'USERS NOT FOUND' });
@@ -238,7 +238,7 @@ async function getAllStudentPagination(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.User.findAndCountAll(paginate(req.query, req.query))
+    await db.User.findAll(paginate(req.query, req.query))
         .then((obj) => {
             if (obj === null) {
                 res.status(400).json({ error: 'USER NOT FOUND' });

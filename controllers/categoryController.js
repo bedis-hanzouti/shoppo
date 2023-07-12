@@ -81,7 +81,7 @@ async function getAllCategory(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.Category.findAndCountAll(paginate(req.query, req.query))
+    await db.Category.findAll(paginate(req.query, req.query))
         .then((obj) => {
             res.status(200).json({
                 status: 'success',
@@ -90,7 +90,7 @@ async function getAllCategory(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
 async function getAllSoftCategory(req, res) {
