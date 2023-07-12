@@ -35,7 +35,7 @@ async function addProduct(req, res) {
         const category = await db.Category.findAll({ where: { id: { [Op.in]: categories } } });
 
         if (category.length === 0) {
-            return res.status(400).json({ error: 'CATEGORIES not found' });
+            return res.status(400).json([]);
         }
 
         if (user) {
@@ -100,7 +100,7 @@ async function deletProduct(req, res) {
     await db.Product.destroy({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'PRODUCT NOT FOUND' });
+                res.status(400).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -111,21 +111,22 @@ async function deletProduct(req, res) {
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 async function getOneProduct(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
 
-    await db.Product_category.findOne({
-        where: { ProductId: req.params.id },
+
+    await db.Product.findOne({
+        where: { id: req.params.id },
         include: [{
-            model: db.Product, include: [{ model: db.Image }],
+            model: db.Product_category, include: [{ model: db.Category }],
+
             // raw: true,
             order: [['createdAt', 'DESC']]
 
 
-        }],
+        }, { model: db.Image }],
     })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'PRODUCT NOT FOUND' });
+                res.status(400).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -149,7 +150,7 @@ async function getAllProduct(req, res) {
     })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'PRODUCTS NOT FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',
@@ -190,7 +191,7 @@ async function getAllProductByCategory(req, res) {
 
 
         if (!products || products.length === 0) {
-            return res.status(400).json({ error: 'No products found for the specified categories' });
+            return res.status(400).json([]);
         }
 
         return res.status(200).json({
@@ -283,12 +284,12 @@ async function getAllProductByCategoryTopDix(req, res) {
 
 
             }],
-            order: [['createdAt', 'DESC']],
+
             limit: 10
         });
 
         if (!p || p.length === 0) {
-            return res.status(400).json({ error: 'Products NOT FOUND' });
+            return res.status(400).json({ error: [] });
         }
 
         return res.status(200).json({
@@ -304,7 +305,7 @@ async function getAllProductByCategoryTopDix(req, res) {
 
 
 async function updateProduct(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
+
 
     // const validationResult = producySchema.validate(req.body);
     // // console.log(validationResult);
@@ -325,7 +326,7 @@ async function updateProduct(req, res) {
     })
         .then(async (obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'PRODUCT NOT FOUND' });
+                res.status(400).json({ error: {} });
             }
             obj.name = req.body.name || obj.name;
             obj.code = req.body.code || obj.code;
