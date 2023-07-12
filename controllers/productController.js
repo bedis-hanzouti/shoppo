@@ -116,7 +116,7 @@ async function getOneProduct(req, res) {
     await db.Product_category.findOne({
         where: { ProductId: req.params.id },
         include: [{
-            model: db.Product, include: [{ model: db.Image, attributes: ['url'] }],
+            model: db.Product, include: [{ model: db.Image }],
             // raw: true,
             order: [['createdAt', 'DESC']]
 
@@ -181,7 +181,7 @@ async function getAllProductByCategory(req, res) {
 
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
             include: [{
-                model: db.Product, include: [{ model: db.Image, attributes: ['url'] }],
+                model: db.Product, include: [{ model: db.Image }],
                 // raw: true,
 
             }],
