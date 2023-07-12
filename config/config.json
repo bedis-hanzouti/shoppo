@@ -3,21 +3,21 @@
         "username": "hbtn_H3B_admin",
         "password": "ykyBhfNEZ1",
         "database": "hbtn_commerce",
-        "host": "https://www.h3b.tn",
+        "host": "www.h3b.tn",
         "dialect": "mysql"
     },
     "test": {
         "username": "hbtn_H3B_admin",
         "password": "ykyBhfNEZ1",
         "database": "hbtn_commerce",
-        "host": "https://www.h3b.tn",
+        "host": "www.h3b.tn",
         "dialect": "mysql"
     },
     "production": {
         "username": "hbtn_H3B_admin",
         "password": "ykyBhfNEZ1",
         "database": "hbtn_commerce",
-        "host": "https://www.h3b.tn",
+        "host": "www.h3b.tn",
         "dialect": "mysql"
     }
 }
