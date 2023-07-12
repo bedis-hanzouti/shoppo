@@ -8,10 +8,10 @@ const orderSchema = require('../config/joi_validation/orderSchema')
 
 
 async function addNewOrder(req, res) {
-    const validationResult = orderSchema.validate(req.body);
-    // console.log(validationResult);
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
+    // const validationResult = orderSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
 
 
     const t = await db.sequelize.transaction();
@@ -75,10 +75,10 @@ async function addNewOrder(req, res) {
 
 
 async function updateOrder(req, res) {
-    const validationResult = orderSchema.validate(req.body);
-    // console.log(validationResult);
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
+    // const validationResult = orderSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
     if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
 
     try {
