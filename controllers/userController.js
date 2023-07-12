@@ -1,19 +1,24 @@
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const sendEmail = require("../config/sendMail");
 const db = require('../models');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const userSchema = require('../config/joi_validation/userSchema')
 
 async function login(req, res) {
-    const user = await db.User.findOne({ where: { email: req.body.email } });
-    //console.log({user:user.name});
+    if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
+
+    const user = await db.User.findOne({ where: { email: req.body.email }, attributes: { include: ['password'] } });
+    console.log({ body: user.password });
     const secret = process.env.secret || '123456azerty';
     if (!user) {
         return res.status(400).send({ err: 'The userModel not found' });
     }
-
-    if (user && bcrypt.compareSync(req.body.password, user.password)) {
+    const match = await bcrypt.compareSync(req.body.password, user.password)
+    console.log({ match: match });
+    if (user && match) {
+        console.log(user);
         const token = jwt.sign(
             {
                 userModelId: user.id,
@@ -31,14 +36,18 @@ async function login(req, res) {
 }
 
 async function register(req, res) {
+    // const validationResult = userSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
+    // if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
+
+    const t = await db.sequelize.transaction();
     const olduser = await db.User.findOne({ where: { email: req.body.email } });
     if (olduser) {
         return res.status(400).send({ err: 'Email Exist' });
     }
-    // const {error}=validationSchema(req.body)
-    // if(error){
-    //   return res.status(404).send({error:error.details[0].message});
-    // }
+
     await db.User.create({
         name: req.body.name,
         email: req.body.email,
@@ -46,56 +55,50 @@ async function register(req, res) {
         status: req.body.status,
         activity: req.body.activity,
         login: req.body.login,
-        password: bcrypt.hashSync(req.body.password, 10)
+        password: bcrypt.hashSync(req.body.password, 10),
+
     })
         .then((obj) => {
+            transaction: t
             res.json({
                 status: true,
                 message: 'success.',
                 date: obj
             });
         })
-        .catch((err) => res.status(400).json('Error creating ' + err));
+        .catch(async (err) => {
+            await t.rollback();
+            res.status(400).json('Error creating ' + err.message)
+        });
 }
 
-async function addUser(req, res) {
-    // const {error}=validationSchema(req.body)
-    // if(error){
-    //   return res.status(404).send({error:error.details[0].message});
-    // }
 
-    User.sync({ force: false }).then(() => {
-        User.create({
-            firstname: req.body.firstname,
-            lastname: req.body.lastname,
-            email: req.body.email,
-            age: req.body.age,
-            phone: req.body.phone
-        })
-            .then((obj) => {
-                res.status(200).send(obj);
-            })
-            .catch((e) => {
-                res.status(400).json({ error: e });
-            });
-    });
-}
 
 async function deletUser(req, res) {
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
     await db.User.destroy({ where: { id: req.params.id } })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'object delated',
                 data: obj
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
 async function getOneUser(req, res) {
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
     await db.User.findOne({ where: { id: req.params.id } })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             res.status(200).json({
                 status: 'success',
 
@@ -103,92 +106,91 @@ async function getOneUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error getting ' + err));
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
 async function RestoreOneUser(req, res) {
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
     await db.User.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {
-            // console.log(obj);
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             await obj.restore();
             res.status(200).json({
                 status: 'restored success',
 
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
-        .catch((err) => res.status(400).json('Error getting ' + err));
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
 
-        // let userId = parseInt(req.params.id)
 
-        // // Vérification si le champ id est présent et cohérent
-        // if (!userId) {
-        //     return res.status(400).json({ message: 'Missing parameter' })
-        // }
-        
-        // User.restore({ where: {id: userId}})
-        //     .then(() => res.status(204).json({}))
-        //     .catch(err => res.status(500).json({ message: 'Database Error', error: err }))
 }
 
 async function getAllUser(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
-    
+
+
     const limit = req.query.size ? +req.query.size : 10;
-  const offset = req.query.page ? req.query.page * limit : 0;
-    await db.User.findAndCountAll({ limit, offset,order: [['createdAt', 'DESC']] })
+    const offset = req.query.page ? req.query.page * limit : 0;
+    await db.User.findAndCountAll({ limit, offset, order: [['createdAt', 'DESC']] })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USERS NOT FOUND' });
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'status getted',
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
 async function getAllSoftUser(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+
     await db.User.findAll({
-        
+
         where: { deletedAt: { [Op.not]: null } },
         paranoid: false,
         order: [['deletedAt', 'DESC']]
     })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USERS NOT FOUND' });
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'status delated',
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 
-// async function updateUser(req,res) {
-//   let id = req.params.id
 
-//      await db.User.update(req.body, { where: { id: id }}).then((obj)=>{
-//       res.status(200).send(obj)
-//     }).catch((e)=>{
-//       res.status(400).json({error:e})
-//     })
-
-// }
 
 async function updateUser(req, res) {
-    console.log(req.params.id);
+    // console.log(req.params.id);
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+    // const validationResult = userSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
+
     await db.User.findOne({
         where: {
             id: req.params.id
         }
     })
         .then(async (obj) => {
+            if (obj == null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
             obj.name = req.body.name || obj.name;
             obj.email = req.body.email || obj.email;
             obj.city = req.body.city || obj.city;
@@ -201,11 +203,11 @@ async function updateUser(req, res) {
             res.status(200).send(obj);
         })
         .catch((e) => {
-            res.status(400).json({ error: e });
+            res.status(400).json({ error: e.message });
         });
 }
 
- const paginate = (query, schema) => {
+const paginate = (query, schema) => {
     let page = query.page ? query.page - 1 : 0;
     page = page < 0 ? 0 : page;
     let limit = parseInt(query.limit || 10);
@@ -216,90 +218,99 @@ async function updateUser(req, res) {
     delete query.limit;
     delete schema.limit;
     delete schema.page;
-    
+
     Object.keys(schema).forEach((key) => {
         console.log(key)
-      schema[key] && query[key] ? (where[key] = query[key]) : null;
+        schema[key] && query[key] ? (where[key] = query[key]) : null;
     });
     return {
-      where: where,
-      offset,
-      limit,
+        where: where,
+        offset,
+        limit,
     };
-  };
-  
+};
+
 
 async function getAllStudentPagination(req, res) {
-     // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
-    
-   const limit = req.query.size ? +req.query.size : 10;
-  const offset = req.query.page ? req.query.page * limit : 0;
-    await db.User.findAndCountAll(paginate(req.query,req.query))
+
+
+
+
+    const limit = req.query.size ? +req.query.size : 10;
+    const offset = req.query.page ? req.query.page * limit : 0;
+    await db.User.findAndCountAll(paginate(req.query, req.query))
         .then((obj) => {
+            if (obj === null) {
+                res.status(400).json({ error: 'USER NOT FOUND' });
+            }
+
             res.status(200).json({
                 status: 'success',
                 message: 'status getted',
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err));
+        .catch((err) => res.status(400).json('Error  ' + err.message));
 }
 
-async function forgetPassword (req,res){
-  try {
-    
+async function forgetPassword(req, res) {
+    if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
 
-    const user = await db.User.findOne({ email: req.body.email });
-    if (!user)
-        return res.status(400).send("user with given email doesn't exist");
-
-      else {
-          const token = jwt.sign(
-              {
-                  userModelId: user.id,
-                  userModelN: user.name
-                  // isAdmin: userModel.isAdmin
-              },
-              secret,
-              { expiresIn: '1d' }
-          );
-    const link = `${process.env.BASE_URL}/password-reset/${user._id}/${token}`;
-    await sendEmail(user.email, "Password reset", link);
-
-  
-          }
+    try {
 
 
-    res.send("password reset link sent to your email account");
-} catch (error) {
-    res.send("An error occured");
-    console.log(error);
+        const user = await db.User.findOne({ email: req.body.email });
+        if (!user)
+            return res.status(400).send("user with given email doesn't exist");
+
+        else {
+            const token = jwt.sign(
+                {
+                    userModelId: user.id,
+                    userModelN: user.name
+
+                },
+                secret,
+                { expiresIn: '1d' }
+            );
+            const link = `${process.env.BASE_URL}/password-reset/${user._id}/${token}`;
+            await sendEmail(user.email, "Password reset", link);
+
+
+        }
+
+
+        res.send("password reset link sent to your email account");
+    } catch (error) {
+        res.send("An error occured");
+        console.log(error);
+    }
 }
-}
 
-async function resetPassword(req,res) {
-  try {
-   
+async function resetPassword(req, res) {
+    if (!req.params.userId) return res.status(400).send({ err: 'id is empty' });
 
-    const user = await User.findById(req.params.userId);
-    if (!user) return res.status(400).send("invalid link or expired");
-    const token =req.params.token
+    try {
 
-    
-    if (!token) return res.status(400).send("Invalid link or expired");
 
-    user.password = req.body.password;
-    await user.save();
+        const user = await User.findById(req.params.userId);
+        if (!user) return res.status(400).send("invalid link or expired");
+        const token = req.params.token
 
-   
 
-    res.send("password reset sucessfully.");
-} catch (error) {
-    res.send("An error occured");
-    console.log(error);
-}
+        if (!token) return res.status(400).send("Invalid link or expired");
+
+        user.password = req.body.password;
+        await user.save();
+
+
+
+        res.send("password reset sucessfully.");
+    } catch (error) {
+        res.send("An error occured");
+        console.log(error);
+    }
 }
 module.exports = {
     register,
