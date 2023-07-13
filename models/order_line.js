@@ -9,11 +9,11 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false
             },
 
-            status: { type: DataTypes.STRING, allowNull: false },
-            total: { type: DataTypes.INTEGER, allowNull: false },
-            total_discount: { type: DataTypes.INTEGER, allowNull: false },
+            status: { type: DataTypes.STRING, allowNull: true },
+            total: { type: DataTypes.DOUBLE, allowNull: false },
+            total_discount: { type: DataTypes.DOUBLE, allowNull: false },
             quantity: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
-            discount: { type: DataTypes.INTEGER, allowNull: false }
+            discount: { type: DataTypes.DOUBLE, allowNull: false }
         },
         {
             sequelize,

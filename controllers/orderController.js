@@ -19,7 +19,6 @@ async function addNewOrder(req, res) {
         const orderData = req.body;
         const customerId = orderData.customer_id;
         const orderLines = orderData.orderLines;
-        if (!customerId) return res.status(400).send({ err: 'customerId is empty' });
 
         const customer = await db.Customer.findOne({
             where: {
@@ -34,7 +33,7 @@ async function addNewOrder(req, res) {
         }
 
         const order = await db.Order.create({
-            pending: Date.now(),
+            // pending: Sequelize.fn('now'),
             total: orderData.total,
             discount: orderData.discount || 0,
             quantity: orderData.quantity,
@@ -94,10 +93,10 @@ async function updateOrder(req, res) {
             return res.status(400).json({ error: 'Order NOT FOUND' });
         }
 
-        order.pending = req.body.pending ? Date.now() : order.pending;
-        order.canceled = req.body.canceled ? Date.now() : order.canceled;
-        order.delivered = req.body.delivered ? Date.now() : order.delivered;
-        order.expedied = req.body.expedied ? Date.now() : order.expedied;
+        order.pending = order.pending;
+        order.canceled = req.body.canceled === 'canceled' ? Sequelize.fn('now') : order.canceled;
+        order.delivered = req.body.delivered === 'delivered' ? Sequelize.fn('now') : order.delivered;
+        order.expedied = req.body.expedied === "expedied" ? Sequelize.fn('now') : order.expedied;
         order.total = req.body.total || order.total;
         order.total_discount = req.body.total_discount || order.total_discount;
         order.quantity = req.body.quantity || order.quantity;
