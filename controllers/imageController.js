@@ -39,10 +39,7 @@ async function uploadFilee(req) {
 }
 
 async function addImage(req, res) {
-    // const validationResult = categorSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
+
     const files = req.files;
 
     if (!files) return res.status(400).send('No image in the request');
@@ -50,40 +47,48 @@ async function addImage(req, res) {
     const fileName = files.filename;
     const basePath = `/public/uploads/`;
     // const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
-    if (!req.body.ProductId) return res.status(400).send('Product ID not in the request');
+    if (!req.body.ProductId) return res.status(400).send({ error: 'Product ID is required' });
     const product = await db.Product.findOne({ where: { id: req.body.ProductId } });
 
     if (product) {
-        db.Image.sync({ force: false }).then(async () => {
-            files.map(async (file) => {
-                await uploadFilee(file).then(async (res) => {
-                    db.Image.create({
-                        name: res.original_filename,
-                        alt: res.original_filename,
-                        url: res.secure_url, // "http://localhost:3000/public/upload/image-2323232",
+        const validationResult = imageSchema.validate(req.body);
 
-                        ProductId: req.body.ProductId
-                    })
-                })
+        if (validationResult.error)
+            return res.status(404).send({ error: validationResult.error.details[0].message });
 
-                    .then((obj) => {
-                        return res.status(200).send(obj);
+        else {
+            db.Image.sync({ force: false }).then(async () => {
+                files.map(async (file) => {
+                    await uploadFilee(file).then(async (res) => {
+                        db.Image.create({
+                            name: res.original_filename,
+                            alt: res.original_filename,
+                            url: res.secure_url, // "http://localhost:3000/public/upload/image-2323232",
+
+                            ProductId: req.body.ProductId
+                        })
                     })
-                    .catch((e) => {
-                        files.forEach(async (obj) => {
-                            await fs.unlink(obj.path, (err) => {
-                                if (err) {
-                                    console.log('error in deleting a file from uploads');
-                                } else {
-                                    console.log('succesfully deleted from the uploads folder');
-                                }
+
+                        .then((obj) => {
+                            return res.status(201).json({ message: "Image created" });
+                        })
+                        .catch((e) => {
+                            files.forEach(async (obj) => {
+                                await fs.unlink(obj.path, (err) => {
+                                    if (err) {
+                                        console.log('error in deleting a file from uploads');
+                                    } else {
+                                        console.log('succesfully deleted from the uploads folder');
+                                    }
+                                });
                             });
-                        });
 
-                        return res.status(400).send(e.message);
-                    });
+                            return res.status(400).send(e.message);
+                        });
+                });
+
             });
-        });
+        }
     } else {
         res.status(400).json({ error: 'product not found' });
     }

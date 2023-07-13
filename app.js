@@ -7,7 +7,7 @@ const fs = require('fs');
 const db = require('./models');
 var path = require('path');
 const figlet = require('figlet');
-// db.sequelize = sequelize;
+
 db.Sequelize = Sequelize;
 
 

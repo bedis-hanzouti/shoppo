@@ -16,7 +16,7 @@ async function getAllOrderLinesPagination(req, res) {
     await db.OrderLine.findAll({ include: db.Customer }, paginate(req.query, req.query))
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'OrderLines NOT FOUND' });
+                res.status(400).json([]);
             }
             let totalAmount = 0;
             obj.forEach((order) => {
