@@ -97,7 +97,7 @@ async function getOneUser(req, res) {
     await db.User.findOne({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'USER NOT FOUND' });
+                res.status(400).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -138,7 +138,7 @@ async function getAllUser(req, res) {
     await db.User.findAll({ limit, offset, order: [['createdAt', 'DESC']] })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'USERS NOT FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',
@@ -160,7 +160,7 @@ async function getAllSoftUser(req, res) {
     })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'USERS NOT FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',
@@ -241,7 +241,7 @@ async function getAllStudentPagination(req, res) {
     await db.User.findAll(paginate(req.query, req.query))
         .then((obj) => {
             if (obj === null) {
-                res.status(400).json({ error: 'USER NOT FOUND' });
+                res.status(400).json([]);
             }
 
             res.status(200).json({

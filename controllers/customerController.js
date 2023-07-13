@@ -44,7 +44,7 @@ async function register(req, res) {
 
     const olduser = await db.Customer.findOne({ where: { email: req.body.email } });
     if (olduser) {
-        return res.status(400).send({ err: 'Email Exist' });
+        return res.status(400).send({ msg: 'Email Exist' });
     }
 
     await db.Customer.create({
@@ -74,7 +74,7 @@ async function deletUser(req, res) {
     await db.Customer.destroy({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'USER NOT FOUND' });
+                res.status(400).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -92,7 +92,7 @@ async function getOneUser(req, res) {
     await db.Customer.findOne({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'USER NOT FOUND' });
+                res.status(400).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -110,7 +110,7 @@ async function RestoreOneUser(req, res) {
     await db.Customer.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'USER NOT FOUND' });
+                res.status(400).json({});
             }
             await obj.restore();
             res.status(200).json({
@@ -139,7 +139,7 @@ async function getAllUser(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error  ' + err.message));
+        .catch((err) => res.status(400).json([]));
 }
 
 async function getAllSoftUser(req, res) {

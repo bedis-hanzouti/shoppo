@@ -3,13 +3,50 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const fs = require('fs');
 const categorSchema = require('../config/joi_validation/categorySchema')
+const cloudinary = require('cloudinary').v2;
+
+
+async function cloudinaryImageUploadMethod(file) {
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader.upload(file, (err, res) => {
+            if (err) {
+                reject(new Error("Upload image error"));
+            } else {
+                resolve(res);
+            }
+        });
+    });
+}
+
+
+
+
+async function uploadFilee(req) {
+
+    const urls = [];
+
+
+    const { path } = req;
+
+
+    const newPath = await cloudinaryImageUploadMethod(path)
+    urls.push(newPath);
+    return newPath
+}
+
+
+
+
+
 
 
 async function addCategory(req, res) {
-    // const validationResult = categorSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
+    const validationResult = categorSchema.validate(req.body);
+    // console.log(validationResult);
+
+    if (validationResult.error)
+        return res.status(404).send({ error: validationResult.error.details[0].message });
+
     const file = req.file;
 
     if (!file) return res.status(400).send('No image in the request');
@@ -17,30 +54,30 @@ async function addCategory(req, res) {
     const fileName = file.filename;
     const basePath = `/public/uploads/`;
 
-    db.Category.sync({ force: false }).then(() => {
-        db.Category.create({
-            name: req.body.name,
+    db.Category.sync({ force: false }).then(async () => {
+        await uploadFilee(file).then(async (obj) => {
+            await db.Category.create({
+                name: req.body.name,
 
-            description: req.body.description,
-
-            image: `${basePath}${fileName}`, // "http://localhost:3000/public/upload/image-2323232"
-
-            url: fileName
-        })
-            .then((obj) => {
-                res.status(200).send(obj);
+                url: obj.secure_url,
+                description: req.body.description
             })
-            .catch(async (e) => {
-                await fs.unlink(file.path, (err) => {
-                    if (err) {
-                        console.log('error in deleting a file from uploads');
-                    } else {
-                        console.log('succesfully deleted from the uploads folder');
-                    }
+                .then((obj) => {
+                    res.status(200).send(obj);
+                })
+                .catch(async (e) => {
+                    await fs.unlink(file.path, (err) => {
+                        if (err) {
+                            console.log('error in deleting a file from uploads');
+                        } else {
+                            console.log('succesfully deleted from the uploads folder');
+                        }
+                    });
+                    res.status(400).json(e.message);
                 });
-                res.status(400).json(e.message);
-            });
-    });
+        });
+    })
+
 }
 
 async function deleteCategory(req, res) {
@@ -63,7 +100,7 @@ async function getOneCategory(req, res) {
     await db.Category.findOne({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'CATEGORY NOT FOUND' });
+                res.status(400).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -90,7 +127,7 @@ async function getAllCategory(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err.message));
+        .catch((err) => res.status(400).json([]));
 }
 
 async function getAllSoftCategory(req, res) {
@@ -108,7 +145,7 @@ async function getAllSoftCategory(req, res) {
                 //   user:doc.payload.userN
             });
         })
-        .catch((err) => res.status(400).json('Error deleting ' + err.message));
+        .catch((err) => res.status(400).json([]));
 }
 
 const paginate = (query, schema) => {
@@ -141,7 +178,7 @@ async function RestoreOneCategory(req, res) {
     await db.Category.findOne({ where: { id: req.params.id }, paranoid: false })
         .then(async (obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'CATEGORY NOT FOUND' });
+                res.status(400).json({});
             }
             await obj.restore();
             res.status(200).json({
