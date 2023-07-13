@@ -41,11 +41,7 @@ async function uploadFilee(req) {
 
 
 async function addCategory(req, res) {
-    const validationResult = categorSchema.validate(req.body);
-    // console.log(validationResult);
 
-    if (validationResult.error)
-        return res.status(404).send({ error: validationResult.error.details[0].message });
 
     const file = req.file;
 
@@ -55,28 +51,42 @@ async function addCategory(req, res) {
     const basePath = `/public/uploads/`;
 
     db.Category.sync({ force: false }).then(async () => {
-        await uploadFilee(file).then(async (obj) => {
-            await db.Category.create({
-                name: req.body.name,
+        const validationResult = categorSchema.validate(req.body);
 
-                url: obj.secure_url,
-                description: req.body.description
-            })
-                .then((obj) => {
-                    res.status(200).send(obj);
+        if (validationResult.error) {
+            return res.status(404).send({ error: validationResult.error.details[0].message });
+        }
+        else {
+            await uploadFilee(file).then(async (obj) => {
+                // console.log(validationResult);
+
+
+
+
+                await db.Category.create({
+                    name: req.body.name,
+                    url: obj.secure_url,
+                    description: req.body.description
                 })
-                .catch(async (e) => {
-                    await fs.unlink(file.path, (err) => {
-                        if (err) {
-                            console.log('error in deleting a file from uploads');
-                        } else {
-                            console.log('succesfully deleted from the uploads folder');
-                        }
-                    });
-                    res.status(400).json(e.message);
-                });
-        });
+                    .then((obj) => {
+                        res.status(200).send(obj);
+                    })
+                    .catch(async (e) => {
+                        await fs.unlink(file.path, (err) => {
+                            if (err) {
+                                console.log('error in deleting a file from uploads');
+                            } else {
+                                console.log('succesfully deleted from the uploads folder');
+                            }
+                        });
+                        res.status(400).json(e.message);
+                    })
+
+
+            })
+        }
     })
+
 
 }
 

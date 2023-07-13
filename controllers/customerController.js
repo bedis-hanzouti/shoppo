@@ -132,6 +132,9 @@ async function getAllUser(req, res) {
     const offset = req.query.page ? req.query.page * limit : 0;
     await db.Customer.findAll({ limit, offset, order: [['createdAt', 'DESC']] })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json([]);
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'status getted',
@@ -151,6 +154,9 @@ async function getAllSoftUser(req, res) {
         order: [['deletedAt', 'DESC']]
     })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json([]);
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'status delated',
@@ -227,6 +233,9 @@ async function getAllStudentPagination(req, res) {
     const offset = req.query.page ? req.query.page * limit : 0;
     await db.Customer.findAll({ attributes: { exclude: ['password'] } }, paginate(req.query, req.query))
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json([]);
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'status getted',
