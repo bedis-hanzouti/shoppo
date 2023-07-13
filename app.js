@@ -9,6 +9,10 @@ var path = require('path');
 const figlet = require('figlet');
 // db.sequelize = sequelize;
 db.Sequelize = Sequelize;
+const multer = require('multer');
+
+const storage = multer.diskStorage({});
+const upload = multer({ storage: storage });
 
 const logger = require('morgan');
 const cors = require('cors');

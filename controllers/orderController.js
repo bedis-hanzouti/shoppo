@@ -131,12 +131,11 @@ async function deleteOrder(req, res) {
 }
 
 async function getOneOrder(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
 
     await db.Order.findOne({ where: { id: req.params.id }, include: [db.Customer, db.OrderLine] })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'Order NOT FOUND' });
+                res.status(400).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -152,7 +151,6 @@ async function getOneOrder(req, res) {
 
 
 async function getOrderByCustomer(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'customerId is empty' });
 
 
     try {
@@ -167,7 +165,7 @@ async function getOrderByCustomer(req, res) {
         });
 
         if (orders.length === 0) {
-            return res.status(400).json({ error: 'Orders NOT FOUND' });
+            return res.status(400).json([]);
         }
 
         let totalAmount = 0;
@@ -201,7 +199,7 @@ async function getAllSoftOrders(req, res) {
     })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'Orders NOT FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',

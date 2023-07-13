@@ -4,37 +4,166 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const db = require('../models');
 const fs = require('fs');
+const util = require('util');
+const multer = require('multer');
+const FormData = require('form-data');
 
+const cloudinary = require('cloudinary').v2;
+const uploadOptions = require('../config/multer')
+const axios = require('axios');
+const form = new FormData()
 
 const productSchema = require('../config/joi_validation/productSchema')
+const imageSchema = require('../config/joi_validation/imageSchema')
+
+
+async function cloudinaryImageUploadMethod(file) {
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader.upload(file, (err, res) => {
+            if (err) {
+                reject(new Error("Upload image error"));
+            } else {
+                resolve(res);
+            }
+        });
+    });
+}
 
 
 
+
+async function uploadFilee(req) {
+
+    const urls = [];
+
+
+    const { path } = req;
+
+
+    const newPath = await cloudinaryImageUploadMethod(path)
+    urls.push(newPath);
+    return newPath
+}
+
+
+cloudinary.config({
+    cloud_name: 'bedis10',
+    api_key: '636586449714424',
+    api_secret: 'OiuLiPg_SUTQR9B9KIM-uy05nMM'
+});
+
+
+// async function addProduct0(req, res) {
+
+//     const files = req.files;
+
+//     if (!files || Object.keys(files).length === 0) {
+//         return res.status(400).send('No image in the request');
+//     }
+
+//     const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
+//     const categories = Array.isArray(req.body.categories) ? req.body.categories : [req.body.categories];
+
+//     if (!req.body.categories) return res.status(400).send({ err: 'categories is empty' });
+
+
+//     try {
+//         const user = await db.User.findOne({ where: { id: req.body.UserId } });
+//         if (!user) {
+//             return res.status(400).json({ error: 'user not found' });
+//         }
+//         const category = await db.Category.findAll({ where: { id: { [Op.in]: categories } } });
+
+//         if (category.length === 0) {
+//             return res.status(400).json({ error: 'categorie not found' });
+//         }
+
+//         if (user) {
+//             const product = await db.Product.create({
+//                 name: req.body.name,
+//                 code: req.body.code,
+//                 description: req.body.description,
+//                 price: req.body.price,
+//                 quantity: req.body.quantity,
+//                 discount: req.body.discount,
+//                 brand: req.body.brand,
+//                 UserId: user.id
+//             });
+
+//             if (product) {
+//                 if (categories.length > 0) {
+//                     await Promise.all(category.map(async (cat) => {
+//                         await db.Product_category.create({
+//                             CategoryId: cat.id,
+//                             ProductId: product.id
+//                         });
+//                     }));
+//                 }
+
+
+
+
+
+//                 await Promise.all(files.map(async (file) => {
+
+//                     await cloudinary.uploader.upload(file.path).then(async (res) => {
+//                         console.log("resresresres", res);
+//                         await db.Image.create({
+//                             name: file.filename,
+//                             alt: "ss",
+//                             url: res.secure_url,
+//                             ProductId: product.id
+//                         });
+//                     })
+
+
+//                 }))
+
+
+
+
+//                 return res.status(201).json({ message: "Product created" });
+//             } else {
+//                 files.forEach(async (file) => {
+//                     await fs.unlink(file.path, (err) => {
+//                         if (err) {
+//                             console.log('error in deleting a file from uploads');
+//                         } else {
+//                             console.log('successfully deleted from the uploads folder');
+//                         }
+//                     });
+//                 });
+//                 return res.status(400).json({ error: 'Error creating product' });
+//             }
+//         } else {
+//             return res.status(400).json({ error: 'User not found' });
+//         }
+//     } catch (error) {
+//         // console.error(error);
+//         return res.status(500).json({ error: error.message });
+//     }
+// }
 
 
 
 async function addProduct(req, res) {
-    // const validationResult = productSchema.validate(req.body);
 
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
     const files = req.files;
-
+    // console.log(files);
     if (!files || Object.keys(files).length === 0) {
         return res.status(400).send('No image in the request');
     }
 
-    const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
     const categories = Array.isArray(req.body.categories) ? req.body.categories : [req.body.categories];
 
     if (!req.body.categories) return res.status(400).send({ err: 'categories is empty' });
-
 
     try {
         const user = await db.User.findOne({ where: { id: req.body.UserId } });
         if (!user) {
             return res.status(400).json({ error: 'user not found' });
         }
+
         const category = await db.Category.findAll({ where: { id: { [Op.in]: categories } } });
 
         if (category.length === 0) {
@@ -63,25 +192,29 @@ async function addProduct(req, res) {
                     }));
                 }
 
+
                 await Promise.all(files.map(async (file) => {
-                    await db.Image.create({
-                        name: file.filename,
-                        alt: "ss",
-                        url: `${basePath}${file.filename}`,
-                        ProductId: product.id
-                    });
+                    await uploadFilee(file).then(async (res) => {
+
+
+                        await db.Image.create({
+                            name: res.original_filename,
+                            alt: res.original_filename,
+                            url: res.secure_url,
+                            ProductId: product.id
+                        });
+                    })
+
+
+
+
+
                 }));
 
                 return res.status(201).json({ message: "Product created" });
             } else {
                 files.forEach(async (file) => {
-                    await fs.unlink(file.path, (err) => {
-                        if (err) {
-                            console.log('error in deleting a file from uploads');
-                        } else {
-                            console.log('successfully deleted from the uploads folder');
-                        }
-                    });
+                    // Handle file cleanup or deletion if necessary
                 });
                 return res.status(400).json({ error: 'Error creating product' });
             }
@@ -89,10 +222,16 @@ async function addProduct(req, res) {
             return res.status(400).json({ error: 'User not found' });
         }
     } catch (error) {
-        // console.error(error);
+        console.error(error);
         return res.status(500).json({ error: error.message });
     }
 }
+
+
+
+
+
+
 
 
 
@@ -245,7 +384,7 @@ async function getAllBrandByCategory(req, res) {
         });
 
         if (!brands || brands.length === 0) {
-            return res.status(400).json({ error: 'BRANDS NOT FOUND' });
+            return res.status(400).json([]);
         }
 
         return res.status(200).json({
@@ -442,6 +581,11 @@ module.exports = {
     deleteCategoryOfProduct,
     getAllProductByCategoryTopDix,
     getAllBrandByCategory,
-    getTopSellingProducts
+    getTopSellingProducts,
+
 };
+
+
+
+
 

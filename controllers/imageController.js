@@ -3,40 +3,74 @@ const db = require('../models');
 const Sequelize = require('sequelize');
 const fs = require('fs');
 const imageSchema = require('../config/joi_validation/imageSchema');
+const cloudinary = require('cloudinary').v2;
+
 
 const Op = Sequelize.Op;
+
+async function cloudinaryImageUploadMethod(file) {
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader.upload(file, (err, res) => {
+            if (err) {
+                reject(new Error("Upload image error"));
+            } else {
+                resolve(res);
+            }
+        });
+    });
+}
+
+
+
+
+async function uploadFilee(req) {
+
+
+
+    const urls = [];
+
+
+    const { path } = req;
+
+
+    const newPath = await cloudinaryImageUploadMethod(path)
+    urls.push(newPath);
+    return newPath
+}
+
 async function addImage(req, res) {
     // const validationResult = categorSchema.validate(req.body);
     // // console.log(validationResult);
     // if (validationResult.error)
     //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    const file = req.files;
-    console.log(file);
-    if (!file) return res.status(400).send('No image in the request');
+    const files = req.files;
 
-    const fileName = file.filename;
+    if (!files) return res.status(400).send('No image in the request');
+
+    const fileName = files.filename;
     const basePath = `/public/uploads/`;
     // const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
-    if (!req.body.ProductId) return res.status(400).send({ err: 'ProductId is empty' });
-
+    if (!req.body.ProductId) return res.status(400).send('Product ID not in the request');
     const product = await db.Product.findOne({ where: { id: req.body.ProductId } });
 
     if (product) {
-        db.Image.sync({ force: false }).then(() => {
-            file.forEach((obj) => {
-                db.Image.create({
-                    name: req.body.name,
-                    alt: req.body.alt,
-                    url: `${basePath}${obj.filename}`, // "http://localhost:3000/public/upload/image-2323232",
+        db.Image.sync({ force: false }).then(async () => {
+            files.map(async (file) => {
+                await uploadFilee(file).then(async (res) => {
+                    db.Image.create({
+                        name: res.original_filename,
+                        alt: res.original_filename,
+                        url: res.secure_url, // "http://localhost:3000/public/upload/image-2323232",
 
-                    ProductId: req.body.ProductId
+                        ProductId: req.body.ProductId
+                    })
                 })
 
                     .then((obj) => {
                         return res.status(200).send(obj);
                     })
                     .catch((e) => {
-                        file.forEach(async (obj) => {
+                        files.forEach(async (obj) => {
                             await fs.unlink(obj.path, (err) => {
                                 if (err) {
                                     console.log('error in deleting a file from uploads');
@@ -148,7 +182,7 @@ async function getOneImage(req, res) {
     await db.Image.findOne({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'IMAGE NOT FOUND' });
+                res.status(400).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -167,7 +201,7 @@ async function getAllSoftImage(req, res) {
     })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'NO IMAGE FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',
@@ -200,7 +234,7 @@ async function getAllImage(req, res) {
     await db.Image.findAll()
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'NO IMAGE FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',
