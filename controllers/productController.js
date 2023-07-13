@@ -193,6 +193,32 @@ async function getOneProduct(req, res) {
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
+async function getAllProductDix(req, res) {
+    // let token=req.headers.authorization
+    // let doc =jwt.decode(token,({complete:true}))
+    await db.Product.findAll({
+        include: [
+            {
+                model: db.Image
+            }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: 10
+    })
+        .then((obj) => {
+            if (obj == null) {
+                res.status(400).json([]);
+            }
+            res.status(200).json({
+                status: 'success',
+                message: 'status geted',
+                data: obj
+                //   user:doc.payload.userN
+            });
+        })
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
+}
+
 async function getAllProduct(req, res) {
     // let token=req.headers.authorization
     // let doc =jwt.decode(token,({complete:true}))
@@ -202,7 +228,8 @@ async function getAllProduct(req, res) {
                 model: db.Image
             }
         ],
-        order: [['createdAt', 'DESC']]
+        order: [['createdAt', 'DESC']],
+
     })
         .then((obj) => {
             if (obj == null) {
