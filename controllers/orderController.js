@@ -14,7 +14,7 @@ async function addNewOrder(req, res) {
     //     return res.status(404).send({ error: validationResult.error.details[0].message });
 
 
-    const t = await db.sequelize.transaction();
+    // const t = await db.sequelize.transaction();
     try {
         const orderData = req.body;
         const customerId = orderData.customer_id;
@@ -25,11 +25,11 @@ async function addNewOrder(req, res) {
             where: {
                 id: customerId,
             },
-            transaction: t,
+            // transaction: t,
         });
 
         if (!customer) {
-            await t.rollback();
+            // await t.rollback();
             return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
         }
 
@@ -40,7 +40,7 @@ async function addNewOrder(req, res) {
             quantity: orderData.quantity,
             total_discount: orderData.total_discount,
             CustomerId: customer.id,
-            transaction: t,
+            // transaction: t,
         });
 
         // Create the order lines
@@ -56,16 +56,16 @@ async function addNewOrder(req, res) {
                     total_discount,
                     OrderId: order.id,
                     ProductId: productId,
-                    transaction: t,
+                    // transaction: t,
                 });
             }
         }
-        await t.commit();
+        // await t.commit();
 
         return res.status(201).json({ message: 'Order created', order });
     } catch (error) {
         console.error('Error creating order:', error);
-        await t.rollback();
+        // await t.rollback();
         return res.status(500).json({ error: error.message });
     }
 }
