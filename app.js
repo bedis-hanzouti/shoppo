@@ -46,7 +46,7 @@ app.use(`${api}/image`, imagesRoutes);
 app.use(`${api}/orders`, ordersRoutes);
 
 db.sequelize
-    .sync({ alter: false, force: true })
+    .sync({ alter: false, force: false })
     .then(() => {
         app.listen(3000, () => {
             console.log('server running in port 3000');
