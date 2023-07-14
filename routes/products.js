@@ -12,7 +12,7 @@ route.post('/', configMedia.uploadOptions.array('images', 5), productController.
 // route.post('/', configMedia.uploadOptions.array('images', 5), productController.addProduct)
 // route.post('/',configMedia.uploadOptions.array('image',5),productController.addProduct)
 
-// route.put('/:id', configMedia.uploadOptions.single('images', 5), productController.updateProduct)
+route.put('/:id', configMedia.uploadOptions.array('images', 5), productController.updateProduct)
 route.put('/update/:id', productController.updateCategoryOfProduct)
 route.get('/', productController.getAllProduct)
 route.get('/:id', productController.getOneProduct)

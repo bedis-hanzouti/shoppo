@@ -2,6 +2,9 @@ const db = require('../models');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const orderSchema = require('../config/joi_validation/orderSchema')
+const customerController = require('../controllers/customerController')
+const sendEmail = require("../config/sendMail");
+
 
 
 
@@ -16,6 +19,7 @@ async function addNewOrder(req, res) {
 
     // const t = await db.sequelize.transaction();
     try {
+        varp = []
         const orderData = req.body;
         const customerId = orderData.customer_id;
         const orderLines = orderData.orderLines;
@@ -31,7 +35,7 @@ async function addNewOrder(req, res) {
             // await t.rollback();
             return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
         }
-        console.log("orderLines", orderLines);
+
         const order = await db.Order.create({
             // pending: Sequelize.fn('now'),
             shipping: orderData.shipping,
@@ -42,13 +46,13 @@ async function addNewOrder(req, res) {
             CustomerId: customer.id,
             // transaction: t, 
         });
-
+        const factureItems = [];
         // Create the order lines
         if (orderLines && orderLines.length > 0) {
             for (const orderLineData of orderLines) {
                 const { orderQuantity, price, discount, total, total_discount, productId, quantity } = orderLineData;
 
-                await db.OrderLine.create({
+                const orderLine = await db.OrderLine.create({
                     orderQuantity,
                     price,
                     quantity,
@@ -57,11 +61,30 @@ async function addNewOrder(req, res) {
                     total_discount,
                     OrderId: order.id,
                     ProductId: productId,
-                    // transaction: t,
                 });
+
+
+                const product = await db.Product.findOne({
+                    where: {
+                        id: productId,
+                    },
+                });
+
+
+                const factureItem = {
+                    productName: product.name,
+                    quantity: quantity,
+                    price,
+
+                };
+
+                factureItems.push(factureItem);
             }
         }
-        // await t.commit();
+        console.log(factureItems);
+
+
+        await sendEmail(customer.email, "Order Confirmation", customer.name, factureItems);
 
         return res.status(201).json({ message: 'Order created', order });
     } catch (error) {
@@ -70,6 +93,74 @@ async function addNewOrder(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+// async function addNewOrder(req, res) {
+//     try {
+//         const orderData = req.body;
+//         const customerId = orderData.customer_id;
+//         const orderLines = orderData.orderLines;
+
+//         const customer = await db.Customer.findOne({
+//             where: {
+//                 id: customerId,
+//             },
+//         });
+
+//         if (!customer) {
+//             return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
+//         }
+
+//         const order = await db.Order.create({
+//             shipping: orderData.shipping,
+//             total: orderData.total,
+//             discount: orderData.discount || 0,
+//             quantity: orderData.quantity,
+//             total_discount: orderData.total_discount,
+//             CustomerId: customer.id,
+//         });
+
+//         const factureItems = [];
+
+//         // Create the order lines
+//         if (orderLines && orderLines.length > 0) {
+//             for (const orderLineData of orderLines) {
+//                 const { orderQuantity, price, discount, total, total_discount, productId, quantity } = orderLineData;
+
+//                 const orderLine = await db.OrderLine.create({
+//                     orderQuantity,
+//                     price,
+//                     quantity,
+//                     discount,
+//                     total,
+//                     total_discount,
+//                     OrderId: order.id,
+//                     ProductId: productId,
+//                 });
+
+//                 // Fetch the associated Product for the OrderLine
+//                 const product = await db.Product.findOne({
+//                     where: {
+//                         id: productId,
+//                     },
+//                 });
+
+//                 // Create the facture item object
+//                 const factureItem = {
+//                     productName: product.name,
+//                     quantity: orderQuantity,
+//                     price,
+//                 };
+
+//                 factureItems.push(factureItem); // Add the facture item to the array
+//             }
+//         }
+
+//         return res.status(201).json({ message: 'Order created', factureItems });
+//     } catch (error) {
+//         console.error('Error creating order:', error);
+//         return res.status(500).json({ error: error.message });
+//     }
+// }
+
 
 
 
@@ -139,9 +230,10 @@ async function getOneOrder(req, res) {
         include: [
 
             { model: db.OrderLine, include: [{ model: db.Product }] }
-        ]
+        ],
     })
         .then((obj) => {
+            console.log(obj);
             if (obj == null) {
                 res.status(400).json({});
             }
@@ -218,7 +310,7 @@ async function getOrderByCustomer(req, res) {
             include: [{
 
                 model: db.OrderLine, include: [{ model: db.Product }],
-            }]
+            }], order: [['createdAt', 'DESC']]
         });
 
         if (orders.length === 0) {

@@ -207,6 +207,35 @@ async function updateUser(req, res) {
         });
 }
 
+async function updateUserAdresse(req, res) {
+    // const validationResult = categorSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
+
+    await db.User.findOne({
+        where: {
+            id: req.params.id
+        }
+    })
+        .then(async (obj) => {
+            if (obj == null) {
+                res.status(400).json({});
+            }
+
+            obj.city = req.body.city || obj.city;
+
+
+            await obj.save();
+            res.status(200).send(obj);
+        })
+        .catch((e) => {
+            res.status(400).json({ error: e.message });
+        });
+}
+
 const paginate = (query, schema) => {
     let page = query.page ? query.page - 1 : 0;
     page = page < 0 ? 0 : page;
@@ -323,5 +352,6 @@ module.exports = {
     RestoreOneUser,
     forgetPassword,
     resetPassword,
-    getAllStudentPagination
+    getAllStudentPagination,
+    updateUserAdresse
 };
