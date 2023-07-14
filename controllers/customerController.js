@@ -184,7 +184,7 @@ async function updateUser(req, res) {
     })
         .then(async (obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'USER NOT FOUND' });
+                res.status(400).json({});
             }
             obj.name = req.body.name || obj.name;
             obj.email = req.body.email || obj.email;
@@ -194,6 +194,35 @@ async function updateUser(req, res) {
             obj.activity = req.body.activity || obj.activity;
             obj.login = req.body.login || obj.login;
             obj.password = req.body.password || obj.password;
+            await obj.save();
+            res.status(200).send(obj);
+        })
+        .catch((e) => {
+            res.status(400).json({ error: e.message });
+        });
+}
+
+async function updateUserAdresse(req, res) {
+    // const validationResult = categorSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
+
+    await db.Customer.findOne({
+        where: {
+            id: req.params.id
+        }
+    })
+        .then(async (obj) => {
+            if (obj == null) {
+                res.status(400).json({});
+            }
+
+            obj.city = req.body.city || obj.city;
+
+
             await obj.save();
             res.status(200).send(obj);
         })
@@ -334,5 +363,6 @@ module.exports = {
     RestoreOneUser,
     forgetPassword,
     resetPassword,
-    getAllStudentPagination
+    getAllStudentPagination,
+    updateUserAdresse
 };
