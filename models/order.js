@@ -19,6 +19,7 @@ module.exports = (sequelize, DataTypes) => {
             total: { type: DataTypes.DOUBLE, allowNull: false },
             total_discount: { type: DataTypes.DOUBLE, allowNull: false },
             quantity: { type: DataTypes.INTEGER, allowNull: false },
+            shipping: { type: DataTypes.INTEGER, allowNull: true },
             discount: { type: DataTypes.DOUBLE, allowNull: false, defaultValue: 0 }
         },
         {
@@ -34,7 +35,8 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: {
                 allowNull: false
             },
-            onDelete: 'cascade'
+            onDelete: 'cascade',
+
         });
     };
     Order.associate = (models) => {

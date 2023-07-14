@@ -31,25 +31,27 @@ async function addNewOrder(req, res) {
             // await t.rollback();
             return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
         }
-
+        console.log("orderLines", orderLines);
         const order = await db.Order.create({
             // pending: Sequelize.fn('now'),
+            shipping: orderData.shipping,
             total: orderData.total,
             discount: orderData.discount || 0,
             quantity: orderData.quantity,
             total_discount: orderData.total_discount,
             CustomerId: customer.id,
-            // transaction: t,
+            // transaction: t, 
         });
 
         // Create the order lines
         if (orderLines && orderLines.length > 0) {
             for (const orderLineData of orderLines) {
-                const { orderQuantity, price, discount, total, total_discount, productId } = orderLineData;
+                const { orderQuantity, price, discount, total, total_discount, productId, quantity } = orderLineData;
 
                 await db.OrderLine.create({
                     orderQuantity,
                     price,
+                    quantity,
                     discount,
                     total,
                     total_discount,
@@ -94,6 +96,7 @@ async function updateOrder(req, res) {
         }
 
         order.pending = order.pending;
+        order.shipping = req.body.shipping || order.shipping
         order.canceled = req.body.canceled === 'canceled' ? Sequelize.fn('now') : order.canceled;
         order.delivered = req.body.delivered === 'delivered' ? Sequelize.fn('now') : order.delivered;
         order.expedied = req.body.expedied === "expedied" ? Sequelize.fn('now') : order.expedied;
@@ -131,7 +134,13 @@ async function deleteOrder(req, res) {
 
 async function getOneOrder(req, res) {
 
-    await db.Order.findOne({ where: { id: req.params.id }, include: [db.Customer, db.OrderLine] })
+    await db.Order.findOne({
+        where: { id: req.params.id },
+        include: [
+
+            { model: db.OrderLine, include: [{ model: db.Product }] }
+        ]
+    })
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({});
@@ -147,6 +156,52 @@ async function getOneOrder(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
+async function getOneOrderWithProduct(req, res) {
+    try {
+        const order = await db.Order.findOne({
+            where: { id: req.params.id },
+            include: [{
+                model: db.OrderLine,
+                include: [{ model: db.Product }],
+                order: [['createdAt', 'DESC']]
+            }]
+        });
+
+        if (order === null) {
+            res.status(400).json({});
+        } else {
+            const product = order.OrderLines.map(orderLine => orderLine.Product);
+
+            const orderData = {
+                id: order.id,
+                pending: order.pending,
+                canceled: order.canceled,
+                delivered: order.delivered,
+                expedied: order.expedied,
+                total: order.total,
+                total_discount: order.total_discount,
+                quantity: order.quantity,
+                discount: order.discount,
+                createdAt: order.createdAt,
+                updatedAt: order.updatedAt,
+                deletedAt: order.deletedAt,
+                CustomerId: order.CustomerId,
+
+                Product: product
+
+            };
+            res.status(200).json({
+                status: 'success',
+
+                data: orderData
+            });
+        }
+    } catch (err) {
+        res.status(400).json('Error getting ' + err.message);
+    }
+}
+
+
 
 
 async function getOrderByCustomer(req, res) {
@@ -160,7 +215,10 @@ async function getOrderByCustomer(req, res) {
             where: {
                 CustomerId: customerId,
             },
-            include: [db.OrderLine],
+            include: [{
+
+                model: db.OrderLine, include: [{ model: db.Product }],
+            }]
         });
 
         if (orders.length === 0) {
@@ -282,5 +340,5 @@ module.exports = {
     deleteOrder,
     updateOrder,
     getOrderByCustomer,
-
+    getOneOrderWithProduct
 };

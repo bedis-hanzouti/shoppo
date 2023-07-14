@@ -11,8 +11,8 @@ module.exports = (sequelize, DataTypes) => {
 
             status: { type: DataTypes.STRING, allowNull: true },
             total: { type: DataTypes.DOUBLE, allowNull: false },
-            total_discount: { type: DataTypes.DOUBLE, allowNull: false },
-            quantity: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+            total_discount: { type: DataTypes.DOUBLE, allowNull: false, defaultValue: 0 },
+            quantity: { type: DataTypes.INTEGER, allowNull: false },
             discount: { type: DataTypes.DOUBLE, allowNull: false }
         },
         {
