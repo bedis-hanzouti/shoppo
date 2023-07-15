@@ -260,7 +260,7 @@ async function getAllStudentPagination(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.Customer.findAll({ attributes: { exclude: ['password'] } }, paginate(req.query, req.query))
+    await db.Customer.findAll({ attributes: { exclude: ['password'], order: [['createdAt', 'DESC']] } }, paginate(req.query, req.query))
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json([]);

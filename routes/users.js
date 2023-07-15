@@ -10,6 +10,8 @@ route.post('/resetpassword/:userId/:token', userController.resetPassword)
 route.put('/:id', userController.updateUser)
 // route.get('/',userController.getAllUser)
 route.get('/', userController.getAllStudentPagination)
+route.put('/:id/adresse', userController.updateUserAdresse)
+
 route.get('/soft', userController.getAllSoftUser)
 route.get('/:id', userController.getOneUser)
 route.delete('/:id', userController.deletUser)
