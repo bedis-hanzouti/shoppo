@@ -18,8 +18,8 @@ const sendEmail = async (email, subject, name, factureItems) => {
         });
 
         var mailOptions = {
-            from: process.env.USER||,
-            to: 'attia00018@gmail.com',
+            from: process.env.USER,
+            to: 'badis.hanzouti.24@eigsi.fr',
             subject: "email from H3B Store about " + subject,
             html: `<!DOCTYPE html>
     <html lang="en">
