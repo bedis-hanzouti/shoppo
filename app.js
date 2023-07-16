@@ -11,7 +11,7 @@ const figlet = require('figlet');
 db.Sequelize = Sequelize;
 
 
-logStream=process.env.NODE_ENV||'dev'
+
 
 const logger = require('morgan');
 const cors = require('cors');
@@ -39,7 +39,7 @@ const customerssRoutes = require('./routes/customer');
 const imagesRoutes = require('./routes/image');
 const ordersRoutes = require('./routes/orders');
 
-const api = process.env.API_URL || '/api/v1';
+const api = process.env.API_URL ;
 
 app.use(`${api}/category`, categoriesRoutes);
 app.use(`${api}/products`, productsRoutes);
