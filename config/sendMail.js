@@ -8,18 +8,18 @@ const sendEmail = async (email, subject, name, factureItems) => {
         })
 
         var transporter = nodemailer.createTransport({
-            host: process.env.HOST||'mail.h3b.tn',
+            host: process.env.HOST,
             secure: false,
             auth: {
-                user: process.env.USER||'contact@h3b.tn',
-                pass: process.env.PASS||'zNVB7EIDW2Sc'
+                user: process.env.USER,
+                pass: process.env.PASS
             },
             tls: { rejectUnauthorized: false }
         });
 
         var mailOptions = {
-            from: process.env.USER||'contact@h3b.tn',
-            to: 'badis.hanzouti.24@eigsi.fr',
+            from: process.env.USER||,
+            to: 'attia00018@gmail.com',
             subject: "email from H3B Store about " + subject,
             html: `<!DOCTYPE html>
     <html lang="en">
