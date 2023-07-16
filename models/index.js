@@ -13,7 +13,10 @@ let sequelize;
 //if (config.use_env_variable) {
 //  sequelize = new Sequelize( config);
 //} else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
+  sequelize = new Sequelize('hbtn_commerce', 'hbtn_H3B_admin', 'ykyBhfNEZ1', {
+  host: 'www.h3b.tn',
+  dialect: 'mysql',
+});
 //}
 
 fs
