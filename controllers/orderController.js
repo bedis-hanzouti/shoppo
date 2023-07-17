@@ -81,7 +81,7 @@ async function addNewOrder(req, res) {
                 factureItems.push(factureItem);
             }
         }
-        console.log(factureItems);
+        console.log("customer_email",customer.email);
 
 
         await sendEmail(customer.email, "Order Confirmation", customer.name, factureItems);
