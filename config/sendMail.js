@@ -1,28 +1,27 @@
 const nodemailer = require("nodemailer");
 
 const sendEmail = async (email, subject, name, factureItems) => {
-    console.log(email);
-    try {
-        var total = 0
-        factureItems.map((e) => {
-            total += e.price * e.quantity
-        })
+  try {
+    var total = 0
+    factureItems.map((e) => {
+      total += e.price * e.quantity
+    })
 
-        var transporter = nodemailer.createTransport({
-            host: process.env.HOST,
-            secure: false,
-            auth: {
-                user: process.env.USER,
-                pass: process.env.PASS
-            },
-            tls: { rejectUnauthorized: false }
-        });
+    var transporter = nodemailer.createTransport({
+      host: process.env.HOST,
+      secure: false,
+      auth: {
+        user: process.env.USER,
+        pass: process.env.PASS
+      },
+      tls: { rejectUnauthorized: false }
+    });
 
-        var mailOptions = {
-            from: process.env.USER,
-            to: email,
-            subject: "email from H3B Store about " + subject,
-            html: `<!DOCTYPE html>
+    var mailOptions = {
+      from: process.env.USER,
+      to: email,
+      subject: "email from H3B Store about " + subject,
+      html: `<!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
@@ -112,21 +111,21 @@ const sendEmail = async (email, subject, name, factureItems) => {
         </div>
       </body>
     </html>`,
-        };
+    };
 
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log('Email sent: ' + info.response);
-            }
-        });
-        return "mail envoyer "
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log('Email sent: ' + info.response);
+      }
+    });
+    return "mail envoyer "
 
 
-    } catch (error) {
-        throw new error(error)
-    }
+  } catch (error) {
+    throw new error(error)
+  }
 };
 
 module.exports = sendEmail;
