@@ -22,7 +22,9 @@ const errorHandler = require('./helpers/error-handler');
 app.use(cors());
 app.options('*', cors());
 const stream = fs.createWriteStream(path.join(__dirname, 'logger.log'), { flags: 'a' });
-app.use(logger('combined', { stream: process.env.NODE_ENV === 'production' ? stream : '' }));
+// app.use(logger('combined', { stream: process.env.NODE_ENV === 'production' ? stream : '' }));
+
+app.use(logger('combined');
 
 //middleware
 app.use(express.json());
