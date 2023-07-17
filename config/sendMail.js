@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 
 const sendEmail = async (email, subject, name, factureItems) => {
+    console.log(email);
     try {
         var total = 0
         factureItems.map((e) => {
