@@ -5,7 +5,6 @@ const Op = Sequelize.Op;
 const db = require('../models');
 const fs = require('fs');
 
-const FormData = require('form-data');
 
 const cloudinary = require('cloudinary').v2;
 
@@ -383,7 +382,7 @@ async function getAllProductByCategoryTopDix(req, res) {
         });
 
         if (!cat) {
-            return res.status(400).json({ error: 'Categories NOT FOUND' });
+            return res.status(400).json({});
         }
 
         const p = await db.Product_category.findAll({
@@ -508,36 +507,77 @@ async function deleteCategoryOfProduct(req, res) {
     });
 }
 
-async function getTopSellingProducts() {
-    console.log("***********************************");
-    console.log("hello");
-    console.log("***********************************");
+// async function getTopSellingProducts() {
+//     console.log("***********************************");
+//     console.log("hello");
+//     console.log("***********************************");
+
+//     try {
+
+//         const topSellingProducts = await db.OrderLine.findAll({
+//             attributes: ['ProductId', [db.Sequelize.fn('SUM', db.Sequelize.col('quantity')), 'total']],
+//             group: ['ProductId'],
+//             order: [[db.Sequelize.literal('total'), 'DESC']],
+//             limit: 10,
+//             include: [
+//                 {
+//                     model: db.Product,
+//                     include: [
+//                         {
+//                             model: db.Image
+//                         }
+//                     ]
+//                 }
+//             ]
+//         });
+
+//         return topSellingProducts.map(product => product.Product);
+//     } catch (error) {
+//         console.error('Error retrieving top-selling products:', error);
+//         throw error;
+//     }
+// }
+async function getTopSellingProducts(req, res) {
 
     try {
-
-        const topSellingProducts = await db.OrderLine.findAll({
-            attributes: ['ProductId', [db.Sequelize.fn('SUM', db.Sequelize.col('quantity')), 'total']],
+        const topSellingProductIds = await db.OrderLine.findAll({
+            attributes: [
+                'ProductId',
+                [db.Sequelize.fn('SUM', db.Sequelize.col('quantity')), 'total']
+            ],
             group: ['ProductId'],
             order: [[db.Sequelize.literal('total'), 'DESC']],
-            limit: 10,
-            include: [
-                {
-                    model: db.Product,
-                    include: [
-                        {
-                            model: db.Image
-                        }
-                    ]
-                }
-            ]
+            limit: 10
         });
 
-        return topSellingProducts.map(product => product.Product);
+        const productIds = topSellingProductIds.map(product => product.ProductId);
+
+
+        const topSellingProduct = await db.Product.findAll({
+            where: {
+                id: {
+                    [Op.in]: productIds
+                }
+            },
+            include: [
+                {
+                    model: db.Image
+                }
+            ]
+        })
+        return res.status(200).json({
+            status: 'success',
+            data: await topSellingProduct.map(product => product)
+        });
+
+
     } catch (error) {
         console.error('Error retrieving top-selling products:', error);
         throw error;
     }
 }
+
+
 
 
 
