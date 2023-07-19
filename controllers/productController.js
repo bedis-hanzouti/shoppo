@@ -245,31 +245,32 @@ async function getAllProduct(req, res) {
 
 
 async function getAllProductByName(req, res) {
+    try {
+        console.log(req.query.name);
+        const products = await db.Product.findAll({
+            where: { name: req.query.name },
+            include: [
+                {
+                    model: db.Image
+                }
+            ],
+            order: [['createdAt', 'DESC']],
+        });
 
-    await db.Product.findAll({
-        where: { name: req.params.name },
+        if (products.length === 0) {
+            return res.status(400).json([]);
+        }
 
-        include: [
-            {
-                model: db.Image
-            }
-        ],
-        order: [['createdAt', 'DESC']],
-
-    })
-        .then((obj) => {
-            if (obj == null) {
-                res.status(400).json([]);
-            }
-            res.status(200).json({
-                status: 'success',
-                message: 'status geted',
-                data: obj
-                //   user:doc.payload.userN
-            });
-        })
-        .catch((err) => res.status(400).json('Error getting ' + err.message));
+        res.status(200).json({
+            status: 'success',
+            message: 'Products retrieved successfully',
+            data: products
+        });
+    } catch (error) {
+        res.status(400).json('Error getting products: ' + error.message);
+    }
 }
+
 
 
 

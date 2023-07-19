@@ -14,14 +14,15 @@ route.post('/', configMedia.uploadOptions.array('images', 5), productController.
 
 route.put('/:id', configMedia.uploadOptions.array('images', 5), productController.updateProduct)
 route.put('/update/:id', productController.updateCategoryOfProduct)
+route.get('/topselling', productController.getTopSellingProducts)
+
 route.get('/', productController.getAllProduct)
-route.get('/:name', productController.getAllProductByName)
+route.get('/name', productController.getAllProductByName)
 
 route.get('/:id', productController.getOneProduct)
 route.get('/topdix/category/:categories', productController.getAllProductByCategoryTopDix)
 route.get('/brand/:categories', productController.getAllBrandByCategory)
 route.get('/category/:categories', productController.getAllProductByCategory)
-route.get('/topselling', productController.getTopSellingProducts)
 route.delete('/:id', productController.deletProduct)
 
 module.exports = route
