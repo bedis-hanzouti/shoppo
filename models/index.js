@@ -13,9 +13,9 @@ let sequelize;
 //if (config.use_env_variable) {
 //  sequelize = new Sequelize( config);
 //} else {
-  sequelize = new Sequelize('hbtn_commerce', 'hbtn_H3B_admin', 'ykyBhfNEZ1', {
-  host: 'www.h3b.tn',
-  dialect: 'mysql',
+sequelize = new Sequelize('commerce', 'postgres', 'toor', {
+  host: 'localhost',
+  dialect: 'postgres',
 });
 //}
 

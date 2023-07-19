@@ -36,40 +36,69 @@ async function login(req, res) {
 }
 
 async function register(req, res) {
-    // const validationResult = userSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    // if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
+    try {
+        const oldUser = await db.User.findOne({ where: { email: req.body.email } });
+        if (oldUser) {
+            return res.status(400).send({ msg: 'Email already exists' });
+        }
 
-    const t = await db.sequelize.transaction();
-    const olduser = await db.User.findOne({ where: { email: req.body.email } });
-    if (olduser) {
-        return res.status(400).send({ err: 'Email Exist' });
-    }
+        const hashedPassword = bcrypt.hashSync(req.body.password, 10);
 
-    await db.User.create({
-        name: req.body.name,
-        email: req.body.email,
-        city: req.body.city,
-        status: req.body.status,
-        activity: req.body.activity,
-        login: req.body.login,
-        password: bcrypt.hashSync(req.body.password, 10),
-
-    })
-        .then((obj) => {
-            transaction: t
-            res.json({
-                status: true,
-                message: 'success.',
-                date: obj
-            });
+        const newUser = await db.User.create({
+            name: req.body.name,
+            email: req.body.email,
+            city: req.body.city,
+            status: req.body.status,
+            activity: req.body.activity,
+            login: req.body.login,
+            password: hashedPassword
         })
-        .catch(async (err) => {
-            await t.rollback();
-            res.status(400).json('Error creating ' + err.message)
-        });
+
+        if (newUser) {
+
+
+
+            const user = await db.User.findOne({
+                where: { email: newUser.email },
+                attributes: { include: ['password'] }
+            });
+
+            if (!user) {
+                return res.status(400).send({ err: 'The userModel not found' });
+            }
+
+            const match = await bcrypt.compare(req.body.password, user.password);
+
+            if (user && match) {
+                const secret = process.env.secret;
+                const token = jwt.sign(
+                    {
+                        userModelId: user.id,
+                        userModelN: user.name
+                    },
+                    secret,
+                    { expiresIn: '1d' }
+                );
+
+                const userWithoutPassword = {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    city: user.city,
+                    status: user.status,
+                    activity: user.activity,
+                }
+
+                res.status(200).send({ user: userWithoutPassword, token: token });
+            } else {
+                res.status(400).send({ err: 'Password is wrong!' });
+            }
+        }
+
+
+    } catch (error) {
+        res.status(400).json('Error creating ' + error.message);
+    }
 }
 
 

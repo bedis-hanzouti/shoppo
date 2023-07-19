@@ -194,8 +194,7 @@ async function getOneProduct(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 async function getAllProductDix(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+
     await db.Product.findAll({
         include: [
             {
@@ -220,9 +219,36 @@ async function getAllProductDix(req, res) {
 }
 
 async function getAllProduct(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+
     await db.Product.findAll({
+        include: [
+            {
+                model: db.Image
+            }
+        ],
+        order: [['createdAt', 'DESC']],
+
+    })
+        .then((obj) => {
+            if (obj == null) {
+                res.status(400).json([]);
+            }
+            res.status(200).json({
+                status: 'success',
+                message: 'status geted',
+                data: obj
+                //   user:doc.payload.userN
+            });
+        })
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
+}
+
+
+async function getAllProductByName(req, res) {
+
+    await db.Product.findAll({
+        where: { name: req.params.name },
+
         include: [
             {
                 model: db.Image
@@ -482,37 +508,41 @@ async function deleteCategoryOfProduct(req, res) {
 }
 
 async function getTopSellingProducts() {
+    console.log("***********************************");
+    console.log("hello");
+    console.log("***********************************");
+
     try {
+
         const topSellingProducts = await db.OrderLine.findAll({
-            attributes: ['ProductId', [db.Sequelize.fn('SUM', db.Sequelize.col('quantity')), 'totalQuantity']],
+            attributes: ['ProductId', [db.Sequelize.fn('SUM', db.Sequelize.col('quantity')), 'total']],
             group: ['ProductId'],
-            order: [[db.Sequelize.literal('totalQuantity'), 'DESC']],
-            limit: 10
+            order: [[db.Sequelize.literal('total'), 'DESC']],
+            limit: 10,
+            include: [
+                {
+                    model: db.Product,
+                    include: [
+                        {
+                            model: db.Image
+                        }
+                    ]
+                }
+            ]
         });
 
-        const productIds = topSellingProducts.map(product => product.ProductId);
-        if (productIds)
-            return await db.Product.findAll({
-                where: {
-                    id: productIds
-                },
-                include: [
-                    {
-                        model: db.Image
-                    }
-                ],
-            });
-
-        // return products;
+        return topSellingProducts.map(product => product.Product);
     } catch (error) {
         console.error('Error retrieving top-selling products:', error);
-
         throw error;
     }
 }
 
+
+
 module.exports = {
     getAllProduct,
+    getAllProductByName,
     deletProduct,
     updateProduct,
     addProduct,
