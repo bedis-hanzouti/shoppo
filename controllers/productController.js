@@ -155,7 +155,7 @@ async function deletProduct(req, res) {
     await db.Product.destroy({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({});
+                res.status(200).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -302,10 +302,14 @@ async function getAllProductByCategory(req, res) {
         if (!products || products.length === 0) {
             return res.status(400).json([]);
         }
+        var clearData = await products.map(proudt => {
 
+            return (proudt.Product)
+
+        })
         return res.status(200).json({
             status: 'success',
-            data: await products.map(proudt => proudt.Product),
+            data: await clearData.filter(proudt => proudt != null),
         });
     } catch (error) {
         console.error('Error getting products:', error);
@@ -354,10 +358,14 @@ async function getAllBrandByCategory(req, res) {
             return res.status(400).json([]);
         }
 
+        var clearData = await brands.map(proudt => {
+
+            return (proudt.Product)
+
+        })
         return res.status(200).json({
             status: 'success',
-            data: await brands.map(proudt => proudt.Product),
-
+            data: await clearData.filter(proudt => proudt != null),
         });
     } catch (error) {
         console.error('Error getting brands:', error);
@@ -401,10 +409,14 @@ async function getAllProductByCategoryTopDix(req, res) {
             return res.status(400).json({ error: [] });
         }
 
+        var clearData = await p.map(proudt => {
+
+            return (proudt.Product)
+
+        })
         return res.status(200).json({
             status: 'success',
-            data: await p.map(proudt => proudt.Product),
-
+            data: await clearData.filter(proudt => proudt != null),
         });
     } catch (error) {
         console.error('Error getting products:', error);
@@ -435,7 +447,7 @@ async function updateProduct(req, res) {
     })
         .then(async (obj) => {
             if (obj == null) {
-                res.status(400).json({ error: {} });
+                res.status(200).json({});
             }
             obj.name = req.body.name || obj.name;
             obj.code = req.body.code || obj.code;
@@ -565,9 +577,14 @@ async function getTopSellingProducts(req, res) {
                 }
             ]
         })
+        var clearData = await topSellingProduct.map(proudt => {
+
+            return (proudt.Product)
+
+        })
         return res.status(200).json({
             status: 'success',
-            data: await topSellingProduct.map(product => product)
+            data: await clearData.filter(proudt => proudt != null),
         });
 
 

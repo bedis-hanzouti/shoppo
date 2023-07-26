@@ -74,7 +74,7 @@ async function addNewOrder(req, res) {
                 const factureItem = {
                     productName: product.name,
                     quantity: quantity,
-                    price,
+                    total_discount,
 
                 };
 

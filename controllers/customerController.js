@@ -251,7 +251,30 @@ async function getAllSoftUser(req, res) {
         .catch((err) => res.status(400).json('Error  ' + err.message));
 }
 
+async function changerPasswordCustomer(req, res, next) {
+    const user = await db.Customer.findOne({ email: req.body.email });
+    if (!user) {
+        return res.status(400).json({ message: "Email doesn't exists" });
+    }
+    const checkPassword = await bcrypt.compare(req.body.password, user.password);
+    if (!checkPassword) {
+        return res.status(400).json({ message: "Invalid Email or Password " });
+    }
+    const salt = await bcrypt.genSalt(10);
+    const verifPassword = await bcrypt.compare(
+        req.body.oldpassword,
+        user.password
+    );
 
+    if (!verifPassword) {
+        return res.status(400).json({ message: "Invalid old password " });
+    } else {
+        user.password = await bcrypt.hash(req.body.Confirmpassword, salt);
+        await user.save();
+        return res.status(200).json({ message: "Password Changed " });
+
+    }
+};
 
 async function updateUser(req, res) {
     // const validationResult = categorSchema.validate(req.body);
@@ -277,7 +300,7 @@ async function updateUser(req, res) {
             obj.status = req.body.status || obj.status;
             obj.activity = req.body.activity || obj.activity;
             obj.login = req.body.login || obj.login;
-            obj.password = req.body.password || obj.password;
+            obj.password = obj.password;
             await obj.save();
             res.status(200).send(obj);
         })
@@ -448,5 +471,6 @@ module.exports = {
     forgetPassword,
     resetPassword,
     getAllStudentPagination,
-    updateUserAdresse
+    updateUserAdresse,
+    changerPasswordCustomer
 };

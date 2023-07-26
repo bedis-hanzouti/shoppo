@@ -227,7 +227,7 @@ async function updateUser(req, res) {
             obj.status = req.body.status || obj.status;
             obj.activity = req.body.activity || obj.activity;
             obj.login = req.body.login || obj.login;
-            obj.password = req.body.password || obj.password;
+            obj.password = obj.password;
             await obj.save();
             res.status(200).send(obj);
         })
