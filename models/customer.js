@@ -36,16 +36,16 @@ module.exports = (sequelize, DataTypes) => {
         paranoid: true,
         // defaultScope: {
         //     attributes: {
-        //       exclude: ['password']
+        //         exclude: ['password']
         //     },
 
-        //   },
+        // },
     });
     Customer.associate = models => {
-        Customer.belongsToMany(models.Product, {
-            through: 'rating',
-            onDelete: "cascade"
-        });
+        // Customer.belongsToMany(models.Product, {
+        //     through: 'rating',
+        //     onDelete: "cascade"
+        // });
         Customer.hasMany(models.Order, {
 
             onDelete: "cascade"

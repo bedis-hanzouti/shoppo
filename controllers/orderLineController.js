@@ -34,7 +34,7 @@ async function getAllOrderLinesPagination(req, res) {
 
 module.exports = {
 
-    getOneOrder,
+
     getAllOrderLinesPagination,
 
 
