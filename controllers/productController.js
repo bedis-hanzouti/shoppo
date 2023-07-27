@@ -5,7 +5,6 @@ const Op = Sequelize.Op;
 const db = require('../models');
 const fs = require('fs');
 
-const FormData = require('form-data');
 
 const cloudinary = require('cloudinary').v2;
 
@@ -156,7 +155,7 @@ async function deletProduct(req, res) {
     await db.Product.destroy({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({});
+                res.status(200).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -194,8 +193,7 @@ async function getOneProduct(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 async function getAllProductDix(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+
     await db.Product.findAll({
         include: [
             {
@@ -220,8 +218,7 @@ async function getAllProductDix(req, res) {
 }
 
 async function getAllProduct(req, res) {
-    // let token=req.headers.authorization
-    // let doc =jwt.decode(token,({complete:true}))
+
     await db.Product.findAll({
         include: [
             {
@@ -244,6 +241,35 @@ async function getAllProduct(req, res) {
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
+
+
+async function getAllProductByName(req, res) {
+    try {
+        console.log(req.query.name);
+        const products = await db.Product.findAll({
+            where: { name: req.query.name },
+            include: [
+                {
+                    model: db.Image
+                }
+            ],
+            order: [['createdAt', 'DESC']],
+        });
+
+        if (products.length === 0) {
+            return res.status(400).json([]);
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Products retrieved successfully',
+            data: products
+        });
+    } catch (error) {
+        res.status(400).json('Error getting products: ' + error.message);
+    }
+}
+
 
 
 
@@ -276,10 +302,14 @@ async function getAllProductByCategory(req, res) {
         if (!products || products.length === 0) {
             return res.status(400).json([]);
         }
+        var clearData = await products.map(proudt => {
 
+            return (proudt.Product)
+
+        })
         return res.status(200).json({
             status: 'success',
-            data: await products.map(proudt => proudt.Product),
+            data: await clearData.filter(proudt => proudt != null),
         });
     } catch (error) {
         console.error('Error getting products:', error);
@@ -328,10 +358,14 @@ async function getAllBrandByCategory(req, res) {
             return res.status(400).json([]);
         }
 
+        var clearData = await brands.map(proudt => {
+
+            return (proudt.Product)
+
+        })
         return res.status(200).json({
             status: 'success',
-            data: await brands.map(proudt => proudt.Product),
-
+            data: await clearData.filter(proudt => proudt != null),
         });
     } catch (error) {
         console.error('Error getting brands:', error);
@@ -356,7 +390,7 @@ async function getAllProductByCategoryTopDix(req, res) {
         });
 
         if (!cat) {
-            return res.status(400).json({ error: 'Categories NOT FOUND' });
+            return res.status(400).json({});
         }
 
         const p = await db.Product_category.findAll({
@@ -375,10 +409,14 @@ async function getAllProductByCategoryTopDix(req, res) {
             return res.status(400).json({ error: [] });
         }
 
+        var clearData = await p.map(proudt => {
+
+            return (proudt.Product)
+
+        })
         return res.status(200).json({
             status: 'success',
-            data: await p.map(proudt => proudt.Product),
-
+            data: await clearData.filter(proudt => proudt != null),
         });
     } catch (error) {
         console.error('Error getting products:', error);
@@ -409,7 +447,7 @@ async function updateProduct(req, res) {
     })
         .then(async (obj) => {
             if (obj == null) {
-                res.status(400).json({ error: {} });
+                res.status(200).json({});
             }
             obj.name = req.body.name || obj.name;
             obj.code = req.body.code || obj.code;
@@ -481,38 +519,88 @@ async function deleteCategoryOfProduct(req, res) {
     });
 }
 
-async function getTopSellingProducts() {
+// async function getTopSellingProducts() {
+//     console.log("***********************************");
+//     console.log("hello");
+//     console.log("***********************************");
+
+//     try {
+
+//         const topSellingProducts = await db.OrderLine.findAll({
+//             attributes: ['ProductId', [db.Sequelize.fn('SUM', db.Sequelize.col('quantity')), 'total']],
+//             group: ['ProductId'],
+//             order: [[db.Sequelize.literal('total'), 'DESC']],
+//             limit: 10,
+//             include: [
+//                 {
+//                     model: db.Product,
+//                     include: [
+//                         {
+//                             model: db.Image
+//                         }
+//                     ]
+//                 }
+//             ]
+//         });
+
+//         return topSellingProducts.map(product => product.Product);
+//     } catch (error) {
+//         console.error('Error retrieving top-selling products:', error);
+//         throw error;
+//     }
+// }
+async function getTopSellingProducts(req, res) {
+
     try {
-        const topSellingProducts = await db.OrderLine.findAll({
-            attributes: ['ProductId', [db.Sequelize.fn('SUM', db.Sequelize.col('quantity')), 'totalQuantity']],
+        const topSellingProductIds = await db.OrderLine.findAll({
+            attributes: [
+                'ProductId',
+                [db.Sequelize.fn('SUM', db.Sequelize.col('quantity')), 'total']
+            ],
             group: ['ProductId'],
-            order: [[db.Sequelize.literal('totalQuantity'), 'DESC']],
+            order: [[db.Sequelize.literal('total'), 'DESC']],
             limit: 10
         });
 
-        const productIds = topSellingProducts.map(product => product.ProductId);
-        if (productIds)
-            return await db.Product.findAll({
-                where: {
-                    id: productIds
-                },
-                include: [
-                    {
-                        model: db.Image
-                    }
-                ],
-            });
+        const productIds = topSellingProductIds.map(product => product.ProductId);
 
-        // return products;
+
+        const topSellingProduct = await db.Product.findAll({
+            where: {
+                id: {
+                    [Op.in]: productIds
+                }
+            },
+            include: [
+                {
+                    model: db.Image
+                }
+            ]
+        })
+        var clearData = await topSellingProduct.map(proudt => {
+
+            return (proudt.Product)
+
+        })
+        return res.status(200).json({
+            status: 'success',
+            data: await clearData.filter(proudt => proudt != null),
+        });
+
+
     } catch (error) {
         console.error('Error retrieving top-selling products:', error);
-
         throw error;
     }
 }
 
+
+
+
+
 module.exports = {
     getAllProduct,
+    getAllProductByName,
     deletProduct,
     updateProduct,
     addProduct,

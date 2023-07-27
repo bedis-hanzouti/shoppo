@@ -35,7 +35,7 @@ async function login(req, res) {
     }
 }
 
-async function register(req, res) {
+async function register0(req, res) {
     // const validationResult = customerSchema.validate(req.body);
     // // console.log(validationResult);
     // if (validationResult.error)
@@ -56,14 +56,98 @@ async function register(req, res) {
         login: req.body.login,
         password: bcrypt.hashSync(req.body.password, 10)
     })
-        .then((obj) => {
-            res.json({
-                status: true,
-                message: 'success.',
-                date: obj
-            });
+        .then(async (obj) => {
+
+            if (!obj.email) return res.status(400).send({ err: 'email is empty' });
+            const user = await db.Customer.findOne({ where: { email: obj.email }, attributes: { include: ['password'] } });
+            console.log({ body: obj.password });
+            console.log({ user: user.password });
+            const secret = process.env.secret;
+            if (!user) {
+                return res.status(400).send({ err: 'The userModel not found' });
+            }
+            const match = await bcrypt.compareSync(obj.password, user.password)
+            console.log({ match: match });
+            if (user && match) {
+                console.log(user);
+                const token = jwt.sign(
+                    {
+                        userModelId: user.id,
+                        userModelN: user.name
+                        // isAdmin: userModel.isAdmin
+                    },
+                    secret,
+                    { expiresIn: '1d' }
+                );
+
+                res.status(200).send({ user: user, token: token });
+            } else {
+                res.status(400).send({ err: 'password is wrong!' });
+            }
         })
         .catch((err) => res.status(400).json('Error creating ' + err.message));
+}
+
+async function register(req, res) {
+    try {
+        const oldUser = await db.Customer.findOne({ where: { email: req.body.email } });
+        if (oldUser) {
+            return res.status(400).send({ msg: 'Email already exists' });
+        }
+
+        const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+
+        const newUser = await db.Customer.create({
+            name: req.body.name,
+            email: req.body.email,
+            city: req.body.city,
+            status: req.body.status,
+            activity: req.body.activity,
+            login: req.body.login,
+            password: hashedPassword
+        });
+
+        if (newUser) {
+
+            const user = await db.Customer.findOne({
+                where: { email: newUser.email },
+                attributes: { include: ['password'] }
+            });
+
+            if (!user) {
+                return res.status(400).send({ err: 'The userModel not found' });
+            }
+
+            const match = await bcrypt.compare(req.body.password, user.password);
+
+            if (user && match) {
+                const secret = process.env.secret;
+                const token = jwt.sign(
+                    {
+                        userModelId: user.id,
+                        userModelN: user.name
+                    },
+                    secret,
+                    { expiresIn: '1d' }
+                );
+                const userWithoutPassword = {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    city: user.city,
+                    status: user.status,
+                    activity: user.activity,
+                }
+
+                res.status(200).send({ user: userWithoutPassword, token: token });
+            } else {
+                res.status(400).send({ err: 'Password is wrong!' });
+            }
+        }
+
+    } catch (error) {
+        res.status(400).json('Error creating ' + error.message);
+    }
 }
 
 
@@ -167,7 +251,30 @@ async function getAllSoftUser(req, res) {
         .catch((err) => res.status(400).json('Error  ' + err.message));
 }
 
+async function changerPasswordCustomer(req, res, next) {
+    const user = await db.Customer.findOne({ email: req.body.email });
+    if (!user) {
+        return res.status(400).json({ message: "Email doesn't exists" });
+    }
+    const checkPassword = await bcrypt.compare(req.body.password, user.password);
+    if (!checkPassword) {
+        return res.status(400).json({ message: "Invalid Email or Password " });
+    }
+    const salt = await bcrypt.genSalt(10);
+    const verifPassword = await bcrypt.compare(
+        req.body.oldpassword,
+        user.password
+    );
 
+    if (!verifPassword) {
+        return res.status(400).json({ message: "Invalid old password " });
+    } else {
+        user.password = await bcrypt.hash(req.body.Confirmpassword, salt);
+        await user.save();
+        return res.status(200).json({ message: "Password Changed " });
+
+    }
+};
 
 async function updateUser(req, res) {
     // const validationResult = categorSchema.validate(req.body);
@@ -193,7 +300,7 @@ async function updateUser(req, res) {
             obj.status = req.body.status || obj.status;
             obj.activity = req.body.activity || obj.activity;
             obj.login = req.body.login || obj.login;
-            obj.password = req.body.password || obj.password;
+            obj.password = obj.password;
             await obj.save();
             res.status(200).send(obj);
         })
@@ -364,5 +471,6 @@ module.exports = {
     forgetPassword,
     resetPassword,
     getAllStudentPagination,
-    updateUserAdresse
+    updateUserAdresse,
+    changerPasswordCustomer
 };

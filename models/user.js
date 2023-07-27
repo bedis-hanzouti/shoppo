@@ -29,20 +29,19 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
             sequelize,
-            paranoid: true
+            paranoid: true,
             // defaultScope: {
-            //   attributes: {
-            //     exclude: ['password']
-            //   },
+            //     attributes: {
+            //         exclude: ['password']
+            //     },
 
             // },
-        }
-    );
-    User.associate = (models) => {
-        User.hasMany(models.Product, {
-            onDelete: 'cascade'
         });
-    };
+    // User.associate = (models) => {
+    //     User.hasMany(models.Product, {
+    //         onDelete: 'cascade'
+    //     });
+    // };
 
     return User;
 };
