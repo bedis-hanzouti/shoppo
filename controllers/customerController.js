@@ -21,8 +21,8 @@ async function login(req, res) {
         console.log(user);
         const token = jwt.sign(
             {
-                userModelId: user.id,
-                userModelN: user.name
+                id: user.id,
+
                 // isAdmin: userModel.isAdmin
             },
             secret,
@@ -72,8 +72,8 @@ async function register0(req, res) {
                 console.log(user);
                 const token = jwt.sign(
                     {
-                        userModelId: user.id,
-                        userModelN: user.name
+                        id: user.id,
+
                         // isAdmin: userModel.isAdmin
                     },
                     secret,
@@ -124,8 +124,9 @@ async function register(req, res) {
                 const secret = process.env.secret;
                 const token = jwt.sign(
                     {
-                        userModelId: user.id,
-                        userModelN: user.name
+                        id: user.id,
+
+                        // isAdmin: userModel.isAdmin
                     },
                     secret,
                     { expiresIn: '1d' }
@@ -170,22 +171,21 @@ async function deletUser(req, res) {
 }
 
 async function getOneUser(req, res) {
-    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
 
+    console.log(req.user);
+    try {
+        const obj = await db.Customer.findOne({ where: { id: req.user.id } });
+        if (!obj) {
+            return res.status(400).json({});
+        }
+        return res.status(200).json({
+            status: 'success',
+            data: obj
 
-    await db.Customer.findOne({ where: { id: req.params.id } })
-        .then((obj) => {
-            if (obj == null) {
-                res.status(400).json({});
-            }
-            res.status(200).json({
-                status: 'success',
-
-                data: obj
-                //   user:doc.payload.userN
-            });
-        })
-        .catch((err) => res.status(400).json('Error getting ' + err.message));
+        });
+    } catch (err) {
+        return res.status(500).json({ error: 'Error getting data: ' + err.message });
+    }
 }
 
 async function RestoreOneUser(req, res) {
@@ -414,9 +414,9 @@ async function forgetPassword(req, res) {
         else {
             const token = jwt.sign(
                 {
-                    userModelId: user.id,
-                    userModelN: user.name
+                    id: user.id,
 
+                    // isAdmin: userModel.isAdmin
                 },
                 secret,
                 { expiresIn: '1d' }

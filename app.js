@@ -7,6 +7,7 @@ const fs = require('fs');
 const db = require('./models');
 var path = require('path');
 const figlet = require('figlet');
+const userMiddleware = require('./helpers/middleware/userMiddleware');
 
 db.Sequelize = Sequelize;
 
@@ -19,6 +20,7 @@ require('dotenv/config');
 const authJwt = require('./helpers/jwt');
 const errorHandler = require('./helpers/error-handler');
 
+// app.use(userMiddleware);
 app.use(cors());
 app.options('*', cors());
 const stream = fs.createWriteStream(path.join(__dirname, 'logger.log'), { flags: 'a' });
@@ -39,7 +41,7 @@ const customerssRoutes = require('./routes/customer');
 const imagesRoutes = require('./routes/image');
 const ordersRoutes = require('./routes/orders');
 
-const api = process.env.API_URL ;
+const api = process.env.API_URL;
 
 app.use(`${api}/category`, categoriesRoutes);
 app.use(`${api}/products`, productsRoutes);

@@ -241,6 +241,31 @@ async function getAllProduct(req, res) {
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
+async function getLastTenProduct(req, res) {
+
+    await db.Product.findAll({
+        include: [
+            {
+                model: db.Image
+            }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: 10
+
+    })
+        .then((obj) => {
+            if (obj == null) {
+                res.status(400).json([]);
+            }
+            res.status(200).json({
+                status: 'success',
+                message: 'status geted',
+                data: obj
+                //   user:doc.payload.userN
+            });
+        })
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
+}
 
 
 async function getAllProductByName(req, res) {
@@ -611,6 +636,7 @@ module.exports = {
     getAllProductByCategoryTopDix,
     getAllBrandByCategory,
     getTopSellingProducts,
+    getLastTenProduct
 
 };
 

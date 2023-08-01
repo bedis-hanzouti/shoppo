@@ -30,12 +30,12 @@ module.exports = (sequelize, DataTypes) => {
         {
             sequelize,
             paranoid: true,
-            // defaultScope: {
-            //     attributes: {
-            //         exclude: ['password']
-            //     },
+            defaultScope: {
+                attributes: {
+                    exclude: ['password']
+                },
 
-            // },
+            },
         });
     // User.associate = (models) => {
     //     User.hasMany(models.Product, {

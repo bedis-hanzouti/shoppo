@@ -14,7 +14,9 @@ route.post('/', configMedia.uploadOptions.array('images', 6), productController.
 
 route.put('/:id', configMedia.uploadOptions.array('images', 6), productController.updateProduct)
 route.put('/update/:id', productController.updateCategoryOfProduct)
+
 route.get('/topselling', productController.getTopSellingProducts)
+route.get('/topten', productController.getLastTenProduct)
 
 route.get('/', productController.getAllProduct)
 route.get('/name', productController.getAllProductByName)
