@@ -99,32 +99,27 @@ async function addProduct(req, res) {
                         });
                     }));
                 }
-                const validationResult = productSchema.validate(req.body);
 
-                if (validationResult.error) {
-                    return res.status(404).send({ error: validationResult.error.details[0].message });
-                }
-                else {
-                    await Promise.all(files.map(async (file) => {
-                        await uploadFilee(file).then(async (res) => {
+                await Promise.all(files.map(async (file) => {
+                    await uploadFilee(file).then(async (res) => {
 
 
-                            await db.Image.create({
-                                name: res.original_filename,
-                                alt: res.original_filename,
-                                url: res.secure_url,
-                                ProductId: product.id
-                            });
-                        })
+                        await db.Image.create({
+                            name: res.original_filename,
+                            alt: res.original_filename,
+                            url: res.secure_url,
+                            ProductId: product.id
+                        });
+                    })
 
 
 
 
 
-                    }));
+                }));
 
-                    return res.status(201).json({ message: "Product created" });
-                }
+                return res.status(201).json({ message: "Product created" });
+                // }
             } else {
                 files.forEach(async (file) => {
                     // Handle file cleanup or deletion if necessary
@@ -139,6 +134,86 @@ async function addProduct(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+
+async function addProduct2(req, res) {
+    try {
+        const files = req.files;
+        if (!files || Object.keys(files).length === 0) {
+            return res.status(400).send('No image in the request');
+        }
+
+        const { UserId, name, code, description, price, quantity, discount, brand } = req.body;
+
+        const categories = Array.isArray(req.body.categories) ? req.body.categories : [req.body.categories];
+
+        if (!req.body.categories) return res.status(400).send({ err: 'categories is empty' });
+
+        const user = await db.User.findOne({ where: { id: UserId } });
+        if (!user) {
+            return res.status(400).json({ error: 'User not found' });
+        }
+
+        const existingCategories = await db.Category.findAll({ where: { id: { [Op.in]: categories } } });
+        if (existingCategories.length !== categories.length) {
+            return res.status(400).json({ error: 'Some categories not found' });
+        }
+
+        const product = await db.Product.create({
+            name, code, description, price, quantity, discount, brand, UserId: user.id
+        });
+
+        const uploadedImages = await uploadImagesWithTimeout(files, product);
+        console.log("Uploaded images:", uploadedImages);
+
+        return res.status(201).json({ message: "Product created" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Error creating product" });
+    }
+}
+
+async function uploadImagesWithTimeout(files, product) {
+    const uploadedImages = [];
+
+    for (const file of files) {
+        try {
+            const image = await uploadFileToCloudinary(file);
+            const createdImage = await db.Image.create({
+                name: image.original_filename,
+                alt: image.original_filename,
+                url: image.secure_url,
+                ProductId: product.id
+            });
+            uploadedImages.push(createdImage);
+
+            await delay(3000); // Introduce a delay of 3 seconds
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            // Handle error or continue with other images
+        }
+    }
+
+    return uploadedImages;
+}
+
+async function uploadFileToCloudinary(file) {
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader.upload(file.path, { folder: 'product_images' }, (error, result) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(result);
+            }
+        });
+    });
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+
 
 
 
@@ -216,13 +291,44 @@ async function getAllProductDix(req, res) {
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
-
 async function getAllProduct(req, res) {
+
+    await db.Product_category.findAll({
+        attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
+
+        include: [{
+            model: db.Product, include: [{ model: db.Image }],
+            // raw: true,
+
+        }, {
+            model: db.Category
+        }
+        ],
+        order: [['createdAt', 'DESC']]
+    })
+        .then(async (obj) => {
+            if (obj == null) {
+                res.status(400).json([]);
+            }
+            // await obj.map(proudt => proudt.Product)
+            res.status(200).json({
+                status: 'success',
+                message: 'status geted',
+                data: obj
+                //   user:doc.payload.userN
+            });
+        })
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
+}
+async function getAllProduct0(req, res) {
 
     await db.Product.findAll({
         include: [
             {
                 model: db.Image
+            },
+            {
+                model: db.Category
             }
         ],
         order: [['createdAt', 'DESC']],
@@ -270,7 +376,7 @@ async function getLastTenProduct(req, res) {
 
 async function getAllProductByName(req, res) {
     try {
-        console.log(req.query.name);
+
         const products = await db.Product.findAll({
             where: { name: req.query.name },
             include: [

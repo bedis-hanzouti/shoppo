@@ -41,16 +41,11 @@ module.exports = (sequelize, DataTypes) => {
 
         },
     });
-    Customer.associate = models => {
-        // Customer.belongsToMany(models.Product, {
-        //     through: 'rating',
-        //     onDelete: "cascade"
-        // });
+    Customer.associate = (models) => {
         Customer.hasMany(models.Order, {
-
-            onDelete: "cascade"
+            onDelete: 'cascade',
         });
-    }
+    };
 
     Customer.associate = models => {
         Customer.hasMany(models.Order, {

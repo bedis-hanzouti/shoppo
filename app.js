@@ -40,6 +40,7 @@ const usersRoutes = require('./routes/users');
 const customerssRoutes = require('./routes/customer');
 const imagesRoutes = require('./routes/image');
 const ordersRoutes = require('./routes/orders');
+const ordersLinesRoutes = require('./routes/orderLines');
 
 const api = process.env.API_URL;
 
@@ -49,6 +50,7 @@ app.use(`${api}/user`, usersRoutes);
 app.use(`${api}/customer`, customerssRoutes);
 app.use(`${api}/image`, imagesRoutes);
 app.use(`${api}/orders`, ordersRoutes);
+app.use(`${api}/orderslines`, ordersLinesRoutes);
 
 db.sequelize
     .sync({ alter: false, force: false })
