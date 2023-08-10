@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
             },
             code: { type: DataTypes.STRING, allowNull: false },
             name: { type: DataTypes.STRING, allowNull: false },
-            description: { type: DataTypes.STRING, allowNull: false },
+            description: { type: DataTypes.TEXT, allowNull: false },
             price: {
                 type: DataTypes.DOUBLE,
                 allowNull: false,

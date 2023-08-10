@@ -6,7 +6,7 @@ const imageController = require('../controllers/imageController')
 route.post('/', configMedia.uploadOptions.array('images', 6), imageController.addImage)
 // route.post('/',configMedia.uploadOptions.array('image',5),productController.addProduct)
 
-// route.put('/:id',configMedia.uploadOptions.single('url'),imageController.updateImage)
+route.put('/:id', imageController.updateImage)
 route.get('/', imageController.getAllImage)
 route.get('/:id', imageController.getOneImage)
 // route.get('/:idCategory',imageController.getAllProductByCategory)

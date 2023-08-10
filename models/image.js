@@ -10,30 +10,31 @@ module.exports = (sequelize, DataTypes) => {
             autoIncrement: true,
             allowNull: false,
         },
-      
-        
+
+
         alt: { type: DataTypes.STRING, allowNull: false },
+        order: { type: DataTypes.INTEGER, allowNull: false },
         url: { type: DataTypes.STRING, allowNull: false },
         name: { type: DataTypes.STRING, allowNull: false },
-       
-        
-        
-        
-         
-          
 
 
-    },{
+
+
+
+
+
+
+    }, {
         sequelize,
         paranoid: true,
-      
+
         // If you want to give a custom name to the deletedAt column
         // deletedAt: 'destroyTime'
-      });
-   
+    });
+
     Image.associate = models => {
         Image.belongsTo(models.Product, {
-            
+
             foreignKey: {
                 allowNull: false
             }

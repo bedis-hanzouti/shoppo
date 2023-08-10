@@ -40,13 +40,18 @@ function checkImageType(file, cb) {
     cb("Error: Images Only!");
   }
 }
-
 const uploadOptions = multer({
-  storage: storage,
-  fileFilter: function (req, file, cb) {
+  dest: 'public/uploads/', fileFilter: function (req, file, cb) {
     checkImageType(file, cb);
-
   }
 });
+
+// const uploadOptions = multer({
+//   storage: storage,
+//   fileFilter: function (req, file, cb) {
+//     checkImageType(file, cb);
+
+//   }
+// });
 
 module.exports = { uploadOptions }
