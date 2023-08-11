@@ -34,23 +34,18 @@ module.exports = (sequelize, DataTypes) => {
     }, {
         sequelize,
         paranoid: true,
-        // defaultScope: {
-        //     attributes: {
-        //         exclude: ['password']
-        //     },
+        defaultScope: {
+            attributes: {
+                exclude: ['password']
+            },
 
-        // },
+        },
     });
-    Customer.associate = models => {
-        // Customer.belongsToMany(models.Product, {
-        //     through: 'rating',
-        //     onDelete: "cascade"
-        // });
+    Customer.associate = (models) => {
         Customer.hasMany(models.Order, {
-
-            onDelete: "cascade"
+            onDelete: 'cascade',
         });
-    }
+    };
 
     Customer.associate = models => {
         Customer.hasMany(models.Order, {

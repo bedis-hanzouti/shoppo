@@ -21,8 +21,8 @@ async function login(req, res) {
         console.log(user);
         const token = jwt.sign(
             {
-                userModelId: user.id,
-                userModelN: user.name
+                id: user.id,
+
                 // isAdmin: userModel.isAdmin
             },
             secret,
@@ -73,8 +73,9 @@ async function register(req, res) {
                 const secret = process.env.secret;
                 const token = jwt.sign(
                     {
-                        userModelId: user.id,
-                        userModelN: user.name
+                        id: user.id,
+
+                        // isAdmin: userModel.isAdmin
                     },
                     secret,
                     { expiresIn: '1d' }
@@ -325,9 +326,9 @@ async function forgetPassword(req, res) {
         else {
             const token = jwt.sign(
                 {
-                    userModelId: user.id,
-                    userModelN: user.name
+                    id: user.id,
 
+                    // isAdmin: userModel.isAdmin
                 },
                 secret,
                 { expiresIn: '1d' }

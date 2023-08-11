@@ -18,7 +18,7 @@ async function cloudinaryImageUploadMethod(file) {
     return new Promise((resolve, reject) => {
         cloudinary.uploader.upload(file, (err, res) => {
             if (err) {
-                reject(new Error("Upload image error"));
+                reject(new Error(err));
             } else {
                 resolve(res);
             }
@@ -42,7 +42,6 @@ async function uploadFilee(req) {
     return newPath
 }
 
-
 cloudinary.config({
     cloud_name: 'bedis10',
     api_key: '636586449714424',
@@ -55,87 +54,88 @@ cloudinary.config({
 
 
 async function addProduct(req, res) {
-
     const files = req.files;
-    // console.log(files);
+
     if (!files || Object.keys(files).length === 0) {
         return res.status(400).send('No image in the request');
     }
 
     const categories = Array.isArray(req.body.categories) ? req.body.categories : [req.body.categories];
 
-    if (!req.body.categories) return res.status(400).send({ err: 'categories is empty' });
+    if (!categories || categories.length === 0) {
+        return res.status(400).json({ error: 'Categories are empty' });
+    }
 
     try {
         const user = await db.User.findOne({ where: { id: req.body.UserId } });
+
         if (!user) {
-            return res.status(400).json({ error: 'user not found' });
-        }
-
-        const category = await db.Category.findAll({ where: { id: { [Op.in]: categories } } });
-
-        if (category.length === 0) {
-            return res.status(400).json({ error: 'categorie not found' });
-        }
-
-        if (user) {
-            const product = await db.Product.create({
-                name: req.body.name,
-                code: req.body.code,
-                description: req.body.description,
-                price: req.body.price,
-                quantity: req.body.quantity,
-                discount: req.body.discount,
-                brand: req.body.brand,
-                UserId: user.id
-            });
-
-            if (product) {
-                if (categories.length > 0) {
-                    await Promise.all(category.map(async (cat) => {
-                        await db.Product_category.create({
-                            CategoryId: cat.id,
-                            ProductId: product.id
-                        });
-                    }));
-                }
-                const validationResult = productSchema.validate(req.body);
-
-                if (validationResult.error) {
-                    return res.status(404).send({ error: validationResult.error.details[0].message });
-                }
-                else {
-                    await Promise.all(files.map(async (file) => {
-                        await uploadFilee(file).then(async (res) => {
-
-
-                            await db.Image.create({
-                                name: res.original_filename,
-                                alt: res.original_filename,
-                                url: res.secure_url,
-                                ProductId: product.id
-                            });
-                        })
-
-
-
-
-
-                    }));
-
-                    return res.status(201).json({ message: "Product created" });
-                }
-            } else {
-                files.forEach(async (file) => {
-                    // Handle file cleanup or deletion if necessary
-                });
-                return res.status(400).json({ error: 'Error creating product' });
-            }
-        } else {
             return res.status(400).json({ error: 'User not found' });
         }
+
+        const foundCategories = await db.Category.findAll({ where: { id: { [Op.in]: categories } } });
+
+        if (foundCategories.length !== categories.length) {
+            return res.status(400).json({ error: 'One or more categories not found' });
+        }
+
+        const product = await db.Product.create({
+            name: req.body.name,
+            code: req.body.code,
+            description: req.body.description,
+            price: req.body.price,
+            quantity: req.body.quantity,
+            discount: req.body.discount,
+            brand: req.body.brand,
+            UserId: user.id
+
+        });
+
+        if (!product) {
+            return res.status(400).json({ error: 'Error creating product' });
+        }
+
+        await Promise.all(foundCategories.map(async (cat) => {
+            await db.Product_category.create({
+                CategoryId: cat.id,
+                ProductId: product.id
+            });
+        }));
+        var i = 0
+        for (const file of files) {
+            try {
+                i++;
+                const uploadedFile = await new Promise((resolve, reject) => {
+                    setTimeout(async () => {
+                        try {
+                            const fileData = await uploadFilee(file);
+                            resolve(fileData);
+                        } catch (error) {
+                            reject(error);
+                        }
+                        fs.unlinkSync(file.path);
+
+                    }, 1000); // Change the timeout value as needed
+                    // fs.unlinkSync(file.path);
+                });
+
+                await db.Image.create({
+                    name: uploadedFile.original_filename,
+                    alt: uploadedFile.original_filename,
+                    order: i,
+                    url: uploadedFile.secure_url,
+
+                    ProductId: product.id
+                });
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                // Handle file upload error
+            }
+        }
+        // await fs.emptyDir('public/uploads')
+        return res.status(201).json({ message: 'Product created' });
     } catch (error) {
-        console.error(error);
+        console.error('Error creating product:', error);
         return res.status(500).json({ error: error.message });
     }
 }
@@ -149,8 +149,12 @@ async function addProduct(req, res) {
 
 
 
+
+
 async function deletProduct(req, res) {
     // if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
+
+    await db.Image.destroy({ where: { ProductId: req.params.id } });
 
     await db.Product.destroy({ where: { id: req.params.id } })
         .then((obj) => {
@@ -216,8 +220,63 @@ async function getAllProductDix(req, res) {
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
-
 async function getAllProduct(req, res) {
+
+    await db.Product_category.findAll({
+        attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
+
+        include: [{
+            model: db.Product, include: [{ model: db.Image }],
+            // raw: true,
+
+        }, {
+            model: db.Category
+        }
+        ],
+        order: [['createdAt', 'DESC']]
+    })
+        .then(async (obj) => {
+            if (obj == null) {
+                res.status(400).json([]);
+            }
+            // await obj.map(proudt => proudt.Product)
+            res.status(200).json({
+                status: 'success',
+                message: 'status geted',
+                data: obj
+                //   user:doc.payload.userN
+            });
+        })
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
+}
+async function getAllProduct0(req, res) {
+
+    await db.Product.findAll({
+        include: [
+            {
+                model: db.Image
+            },
+            {
+                model: db.Category
+            }
+        ],
+        order: [['createdAt', 'DESC']],
+
+    })
+        .then((obj) => {
+            if (obj == null) {
+                res.status(400).json([]);
+            }
+            res.status(200).json({
+                status: 'success',
+                message: 'status geted',
+                data: obj
+                //   user:doc.payload.userN
+            });
+        })
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
+}
+async function getLastTenProduct(req, res) {
 
     await db.Product.findAll({
         include: [
@@ -226,6 +285,7 @@ async function getAllProduct(req, res) {
             }
         ],
         order: [['createdAt', 'DESC']],
+        limit: 10
 
     })
         .then((obj) => {
@@ -245,7 +305,7 @@ async function getAllProduct(req, res) {
 
 async function getAllProductByName(req, res) {
     try {
-        console.log(req.query.name);
+
         const products = await db.Product.findAll({
             where: { name: req.query.name },
             include: [
@@ -425,13 +485,9 @@ async function getAllProductByCategoryTopDix(req, res) {
 }
 
 
-async function updateProduct(req, res) {
+async function updateProduct0(req, res) {
 
 
-    // const validationResult = producySchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
     const file = req.file;
     let imagepath;
     console.log(file);
@@ -467,6 +523,57 @@ async function updateProduct(req, res) {
             res.status(400).json({ error: e.message });
         });
 }
+
+async function updateProduct(req, res) {
+    const productId = req.params.id; // Assuming the product ID is part of the URL
+    const files = req.files;
+
+    console.log(productId);
+    let user;
+
+    try {
+        const product = await db.Product.findOne({ where: { id: req.params.id } });
+
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        if (req.body.UserId) {
+            const user = await db.User.findOne({ where: { id: req.body.UserId } });
+
+            if (!user) {
+                return res.status(400).json({ error: 'User not found' });
+            }
+        }
+
+
+
+
+        await product.update({
+            name: req.body.name || product.name,
+            code: req.body.code || product.code,
+            description: req.body.description || product.description,
+            price: req.body.price || product.price,
+            quantity: req.body.quantity || product.quantity,
+            discount: req.body.discount || product.discount,
+            brand: req.body.brand || product.brand,
+            UserId: product.UserId
+        });
+
+
+
+
+
+
+
+        return res.status(200).json({ message: 'Product updated' });
+    } catch (error) {
+        console.error('Error updating product:', error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+
 
 async function updateCategoryOfProduct(req, res) {
     categories = req.body.category;
@@ -611,6 +718,7 @@ module.exports = {
     getAllProductByCategoryTopDix,
     getAllBrandByCategory,
     getTopSellingProducts,
+    getLastTenProduct
 
 };
 

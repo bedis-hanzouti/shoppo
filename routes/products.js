@@ -8,13 +8,15 @@ const configMedia = require('../config/multer')
 
 const productController = require('../controllers/productController')
 
-route.post('/', configMedia.uploadOptions.array('images', 5), productController.addProduct)
+route.post('/', configMedia.uploadOptions.array('images', 6), productController.addProduct)
 // route.post('/', configMedia.uploadOptions.array('images', 5), productController.addProduct)
 // route.post('/',configMedia.uploadOptions.array('image',5),productController.addProduct)
 
-route.put('/:id', configMedia.uploadOptions.array('images', 5), productController.updateProduct)
+route.put('/:id', configMedia.uploadOptions.array('images', 6), productController.updateProduct)
 route.put('/update/:id', productController.updateCategoryOfProduct)
+
 route.get('/topselling', productController.getTopSellingProducts)
+route.get('/topten', productController.getLastTenProduct)
 
 route.get('/', productController.getAllProduct)
 route.get('/name', productController.getAllProductByName)

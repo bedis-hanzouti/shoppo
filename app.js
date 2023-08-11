@@ -8,8 +8,11 @@ const fs = require('fs');
 const db = require('./models');
 var path = require('path');
 const figlet = require('figlet');
+const userMiddleware = require('./helpers/middleware/userMiddleware');
+const fileUpload = require('express-fileupload')
 
 db.Sequelize = Sequelize;
+
 const logger = winston.createLogger({
     level: 'info',
     format: winston.format.json(),
@@ -19,11 +22,13 @@ const logger = winston.createLogger({
     ]
 });
 //const logger = require('morgan');
+
 const cors = require('cors');
 require('dotenv/config');
 const authJwt = require('./helpers/jwt');
 const errorHandler = require('./helpers/error-handler');
 
+// app.use(userMiddleware);
 app.use(cors());
 app.options('*', cors());
 const stream = fs.createWriteStream(path.join(__dirname, 'logger.log'), { flags: 'a' });
@@ -65,6 +70,7 @@ const usersRoutes = require('./routes/users');
 const customerssRoutes = require('./routes/customer');
 const imagesRoutes = require('./routes/image');
 const ordersRoutes = require('./routes/orders');
+const ordersLinesRoutes = require('./routes/orderLines');
 
 const api = process.env.API_URL;
 
@@ -74,6 +80,7 @@ app.use(`${api}/user`, usersRoutes);
 app.use(`${api}/customer`, customerssRoutes);
 app.use(`${api}/image`, imagesRoutes);
 app.use(`${api}/orders`, ordersRoutes);
+app.use(`${api}/orderslines`, ordersLinesRoutes);
 
 db.sequelize
     .sync({ alter: false, force: false })
