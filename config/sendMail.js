@@ -2,6 +2,7 @@ const nodemailer = require("nodemailer");
 const fs = require('fs');
 const { jsPDF } = require('jspdf');
 const sendEmail = async (email, subject, name, factureItems) => {
+  console.log("email",email);
   try {
     const doc = new jsPDF();
     var total = 0
