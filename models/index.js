@@ -13,31 +13,30 @@ let sequelize;
 //if (config.use_env_variable) {
 //  sequelize = new Sequelize( config);
 //} else {
-sequelize = new Sequelize('commerce', 'postgres', 'toor', {
-  host: 'localhost',
-  dialect: 'postgres',
+sequelize = new Sequelize('hbtn_commerce', 'hbtn_H3B_admin', 'ykyBhfNEZ1', {
+    host: 'www.h3b.tn',
+    dialect: 'mysql'
 });
 //}
 
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
-    return (
-      file.indexOf('.') !== 0 &&
-      file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
-    );
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
-  });
+fs.readdirSync(__dirname)
+    .filter((file) => {
+        return (
+            file.indexOf('.') !== 0 &&
+            file !== basename &&
+            file.slice(-3) === '.js' &&
+            file.indexOf('.test.js') === -1
+        );
+    })
+    .forEach((file) => {
+        const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
+        db[model.name] = model;
+    });
 
-Object.keys(db).forEach(modelName => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
+Object.keys(db).forEach((modelName) => {
+    if (db[modelName].associate) {
+        db[modelName].associate(db);
+    }
 });
 
 db.sequelize = sequelize;
