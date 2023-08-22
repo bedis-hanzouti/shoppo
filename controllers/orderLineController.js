@@ -56,28 +56,16 @@ async function getAllOrderLinesPagination(req, res) {
 
 async function getOrderLinesByOrderId(req, res) {
     try {
-        // Fetch the order to get the CustomerId
-        const order = await db.Order.findOne({
-            where: { id: req.params.id }
-        });
-
-        if (!order) {
-            return res.status(404).json({ error: 'Order not found' });
-        }
-
-        // Fetch the customer using the CustomerId from the order
-        const customer = await db.Customer.findOne({
-            where: { id: order.CustomerId }
-        });
 
         // Fetch the order lines
         const orderLines = await db.OrderLine.findAll({
             where: { OrderId: req.params.id },
-            include: [db.Product]
+            include: [db.Product],
+            // exclude: [db.Order]
         });
 
         // Return the order lines along with the customer information
-        res.status(200).json({ orderLines, customer });
+        res.status(200).json(orderLines);
     } catch (error) {
         console.error("Error fetching order lines:", error);
         res.status(500).json({ error: "Error fetching order lines" });

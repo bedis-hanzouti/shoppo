@@ -87,6 +87,7 @@ async function addProduct(req, res) {
             quantity: req.body.quantity,
             discount: req.body.discount,
             brand: req.body.brand,
+            prix_discount: req.body.prix_discount,
             UserId: user.id
 
         });
@@ -151,7 +152,7 @@ async function addProduct(req, res) {
 
 
 
-async function deletProduct(req, res) {
+async function deletProduct0(req, res) {
     // if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
 
     await db.Image.destroy({ where: { ProductId: req.params.id } });
@@ -169,10 +170,75 @@ async function deletProduct(req, res) {
         })
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
+
+async function deletProduct(req, res) {
+    const productId = req.params.id;
+
+    try {
+        const orderLineWithProduct = await db.OrderLine.findOne({ where: { ProductId: productId } });
+
+        if (orderLineWithProduct) {
+            return res.status(400).json({ error: 'Product exists in orders, cannot delete' });
+        }
+        const product = await db.Product.findOne({ where: { id: productId } });
+
+        if (!product) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+
+        // Delete associated images
+        await db.Image.destroy({ where: { ProductId: productId } });
+
+        // Delete associations from Product_category table
+        await db.Product_category.destroy({ where: { ProductId: productId } });
+
+        // Delete the product
+        await product.destroy();
+
+        return res.status(200).json({ message: 'Product deleted' });
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
 async function getOneProduct(req, res) {
+    try {
+        const product = await db.Product.findOne({
+            where: { id: req.params.id },
+            include: [
+                {
+                    model: db.Product_category,
+                    // attributes: [], // Exclude all attributes from the join table
+                    include: [
+                        { model: db.Category, attributes: ['id', 'name', 'description', 'url', 'createdAt', 'updatedAt', 'deletedAt'] }
+                    ]
+                }
+            ],
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        const categories = product.Product_categories.map(pc => pc.Category);
+
+        res.status(200).json({
+            status: 'success',
+            data: categories
+        });
+    } catch (error) {
+        console.error('Error getting category for product:', error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function getOneProductWithoutQuantity(req, res) {
 
 
     await db.Product.findOne({
+        attributes: { exclude: ['quantity'] },
+
         where: { id: req.params.id },
         include: [{
             model: db.Product_category, include: [{ model: db.Category }],
@@ -221,46 +287,118 @@ async function getAllProductDix(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 async function getAllProduct(req, res) {
+    try {
+        const products = await db.Product.findAll({
+            include: [
+                {
+                    model: db.Image
+                },
+                {
+                    model: db.Product_category,
+                    include: [db.Category] // Include the Category model through the join table
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
 
-    await db.Product_category.findAll({
-        attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
-
-        include: [{
-            model: db.Product, include: [{ model: db.Image }],
-            // raw: true,
-
-        }, {
-            model: db.Category
-        }
-        ],
-        order: [['createdAt', 'DESC']]
-    })
-        .then(async (obj) => {
-            if (obj == null) {
-                res.status(400).json([]);
-            }
-            // await obj.map(proudt => proudt.Product)
-            res.status(200).json({
+        if (products.length === 0) {
+            return res.status(200).json({
                 status: 'success',
-                message: 'status geted',
-                data: obj
-                //   user:doc.payload.userN
+                message: 'No products found',
+                data: []
             });
-        })
-        .catch((err) => res.status(400).json('Error getting ' + err.message));
+        }
+
+        const formattedProducts = products.map((product) => {
+            return {
+                id: product.id,
+                name: product.name,
+                code: product.code,
+                description: product.description,
+                price: product.price,
+                quantity: product.quantity,
+                discount: product.discount,
+                brand: product.brand,
+                createdAt: product.createdAt,
+                updatedAt: product.updatedAt,
+                deletedAt: product.deletedAt,
+                Images: product.Images,
+                category: product.Product_categories.map((pc) => pc.Category)
+            };
+        });
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Products retrieved',
+            data: formattedProducts
+        });
+    } catch (error) {
+        console.error('Error getting products:', error);
+        return res.status(500).json({ error: error.message });
+    }
 }
-async function getAllProduct0(req, res) {
+
+async function getAllProductWithoutQuantity(req, res) {
+    try {
+        const products = await db.Product.findAll({
+            include: [
+                {
+                    model: db.Image
+                },
+                {
+                    model: db.Product_category,
+                    include: [db.Category] // Include the Category model through the join table
+                }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
+
+        if (products.length === 0) {
+            return res.status(200).json({
+                status: 'success',
+                message: 'No products found',
+                data: []
+            });
+        }
+
+        const formattedProducts = products.map((product) => {
+            return {
+                id: product.id,
+                name: product.name,
+                code: product.code,
+                description: product.description,
+                price: product.price,
+                discount: product.discount,
+                brand: product.brand,
+                createdAt: product.createdAt,
+                updatedAt: product.updatedAt,
+                deletedAt: product.deletedAt,
+                Images: product.Images,
+                category: product.Product_categories.map((pc) => pc.Category)
+            };
+        });
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Products retrieved',
+            data: formattedProducts
+        });
+    } catch (error) {
+        console.error('Error getting products:', error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+
+async function getLastTenProduct(req, res) {
 
     await db.Product.findAll({
         include: [
             {
                 model: db.Image
-            },
-            {
-                model: db.Category
             }
         ],
         order: [['createdAt', 'DESC']],
+        limit: 10
 
     })
         .then((obj) => {
@@ -276,9 +414,10 @@ async function getAllProduct0(req, res) {
         })
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
-async function getLastTenProduct(req, res) {
+async function getLastTenProductWithoutQuantity(req, res) {
 
     await db.Product.findAll({
+        attributes: { exclude: ['quantity'] },
         include: [
             {
                 model: db.Image
@@ -308,6 +447,36 @@ async function getAllProductByName(req, res) {
 
         const products = await db.Product.findAll({
             where: { name: req.query.name },
+
+            include: [
+                {
+                    model: db.Image
+                }
+            ],
+            order: [['createdAt', 'DESC']],
+        });
+
+        if (products.length === 0) {
+            return res.status(400).json([]);
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Products retrieved successfully',
+            data: products
+        });
+    } catch (error) {
+        res.status(400).json('Error getting products: ' + error.message);
+    }
+}
+
+async function getAllProductByNameWithoutQuantity(req, res) {
+    try {
+
+        const products = await db.Product.findAll({
+            where: { name: req.query.name },
+            attributes: { exclude: ['quantity'] },
+
             include: [
                 {
                     model: db.Image
@@ -334,7 +503,6 @@ async function getAllProductByName(req, res) {
 
 
 
-
 async function getAllProductByCategory(req, res) {
     const { categories } = req.params;
     console.log("categories", categories);
@@ -352,6 +520,49 @@ async function getAllProductByCategory(req, res) {
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
             include: [{
                 model: db.Product, include: [{ model: db.Image }],
+                // raw: true,
+
+            }],
+            order: [['createdAt', 'DESC']]
+        });
+
+
+        if (!products || products.length === 0) {
+            return res.status(400).json([]);
+        }
+        var clearData = await products.map(proudt => {
+
+            return (proudt.Product)
+
+        })
+        return res.status(200).json({
+            status: 'success',
+            data: await clearData.filter(proudt => proudt != null),
+        });
+    } catch (error) {
+        console.error('Error getting products:', error);
+        return res.status(400).json({ error: error.message });
+    }
+}
+
+async function getAllProductByCategoryWithoutQuantity(req, res) {
+    const { categories } = req.params;
+    console.log("categories", categories);
+
+    // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
+
+
+    // const categories = [3, 2]
+
+    try {
+        const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+
+        const products = await db.Product_category.findAll({
+            attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
+            where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
+            include: [{
+                model: db.Product, attributes: { exclude: ['quantity'] },
+                include: [{ model: db.Image }],
                 // raw: true,
 
             }],
@@ -436,7 +647,6 @@ async function getAllBrandByCategory(req, res) {
 
 
 
-
 async function getAllProductByCategoryTopDix(req, res) {
     const { categories } = req.params;
     console.log("categories", categories);
@@ -484,55 +694,65 @@ async function getAllProductByCategoryTopDix(req, res) {
     }
 }
 
+async function getAllProductByCategoryTopDixWithoutQuantity(req, res) {
+    const { categories } = req.params;
+    console.log("categories", categories);
+    // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
-async function updateProduct0(req, res) {
-
-
-    const file = req.file;
-    let imagepath;
-    console.log(file);
-    if (file) {
-        const fileName = file.filename;
-        const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
-        imagepath = `${basePath}${fileName}`;
-    }
-    await db.Product.findOne({
-        where: {
-            id: req.params.id
-        }
-    })
-        .then(async (obj) => {
-            if (obj == null) {
-                res.status(200).json({});
-            }
-            obj.name = req.body.name || obj.name;
-            obj.code = req.body.code || obj.code;
-            obj.description = req.body.description || obj.description;
-            obj.price = req.body.price || obj.price;
-            obj.quantity = req.body.quantity || obj.quantity;
-            obj.image = obj.image;
-            obj.discount = req.body.discount || obj.discount;
-            obj.brand = req.body.brand || obj.brand;
-            obj.user_id = req.body.user_id || obj.user_id;
-            obj.url = obj.url;
-
-            await obj.save();
-            res.status(200).send(obj);
-        })
-        .catch((e) => {
-            res.status(400).json({ error: e.message });
+    // const categories = [3, 2]
+    try {
+        const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+        const cat = await db.Category.findAll({
+            where: { id: { [db.Sequelize.Op.in]: categoryIds } },
         });
+
+        if (!cat) {
+            return res.status(400).json({});
+        }
+
+        const p = await db.Product_category.findAll({
+            attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
+            where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
+            include: [{
+                model: db.Product, attributes: { exclude: ['quantity'] }, include: [{ model: db.Image }],                 // raw: true,
+
+
+            }],
+
+            limit: 10
+        });
+
+        if (!p || p.length === 0) {
+            return res.status(400).json({ error: [] });
+        }
+
+        var clearData = await p.map(proudt => {
+
+            return (proudt.Product)
+
+        })
+        return res.status(200).json({
+            status: 'success',
+            data: await clearData.filter(proudt => proudt != null),
+        });
+    } catch (error) {
+        console.error('Error getting products:', error);
+        return res.status(400).json({ error: error.message });
+    }
 }
+
+
+
+
 
 async function updateProduct(req, res) {
     const productId = req.params.id; // Assuming the product ID is part of the URL
     const files = req.files;
 
     console.log(productId);
-    let user;
 
     try {
-        const product = await db.Product.findOne({ where: { id: req.params.id } });
+        const product = await db.Product.findOne({ where: { id: productId } });
 
         if (!product) {
             return res.status(404).json({ error: 'Product not found' });
@@ -546,9 +766,6 @@ async function updateProduct(req, res) {
             }
         }
 
-
-
-
         await product.update({
             name: req.body.name || product.name,
             code: req.body.code || product.code,
@@ -557,14 +774,42 @@ async function updateProduct(req, res) {
             quantity: req.body.quantity || product.quantity,
             discount: req.body.discount || product.discount,
             brand: req.body.brand || product.brand,
+            prix_discount: req.body.prix_discount || product.prix_discount,
             UserId: product.UserId
         });
 
+        if (files) {
+            // Create new images for the existing product
+            var i = 0;
+            for (const file of files) {
+                try {
+                    i++;
+                    const uploadedFile = await new Promise((resolve, reject) => {
+                        setTimeout(async () => {
+                            try {
+                                const fileData = await uploadFilee(file); // Assuming you have the uploadFilee function
+                                resolve(fileData);
+                            } catch (error) {
+                                reject(error);
+                            }
+                            fs.unlinkSync(file.path);
+                        }, 1000); // Change the timeout value as needed
+                    });
 
-
-
-
-
+                    // Create new images for the existing product
+                    await db.Image.create({
+                        name: uploadedFile.original_filename,
+                        alt: uploadedFile.original_filename,
+                        order: i,
+                        url: uploadedFile.secure_url,
+                        ProductId: product.id
+                    });
+                } catch (error) {
+                    console.error('Error uploading file:', error);
+                    // Handle file upload error
+                }
+            }
+        }
 
         return res.status(200).json({ message: 'Product updated' });
     } catch (error) {
@@ -572,6 +817,7 @@ async function updateProduct(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
+
 
 
 
@@ -656,6 +902,8 @@ async function deleteCategoryOfProduct(req, res) {
 //         throw error;
 //     }
 // }
+
+
 async function getTopSellingProducts(req, res) {
 
     try {
@@ -701,6 +949,54 @@ async function getTopSellingProducts(req, res) {
     }
 }
 
+async function getTopSellingProductsWithoutQuantity(req, res) {
+
+    try {
+        const topSellingProductIds = await db.OrderLine.findAll({
+            attributes: [
+                'ProductId',
+                [db.Sequelize.fn('SUM', db.Sequelize.col('quantity')), 'total']
+            ],
+            group: ['ProductId'],
+            order: [[db.Sequelize.literal('total'), 'DESC']],
+            limit: 10
+        });
+
+        const productIds = topSellingProductIds.map(product => product.ProductId);
+
+
+        const topSellingProduct = await db.Product.findAll({
+            attributes: { exclude: ['CategoryId', 'ProductId', 'id',] },
+
+            where: {
+                id: {
+                    [Op.in]: productIds
+                }
+            },
+            include: [
+                {
+                    model: db.Image
+                }
+            ]
+        })
+        var clearData = await topSellingProduct.map(proudt => {
+
+            return (proudt.Product)
+
+        })
+        return res.status(200).json({
+            status: 'success',
+            data: await clearData.filter(proudt => proudt != null),
+        });
+
+
+    } catch (error) {
+        console.error('Error retrieving top-selling products:', error);
+        throw error;
+    }
+}
+
+
 
 
 
@@ -718,7 +1014,13 @@ module.exports = {
     getAllProductByCategoryTopDix,
     getAllBrandByCategory,
     getTopSellingProducts,
-    getLastTenProduct
+    getLastTenProduct,
+    getAllProductWithoutQuantity,
+    getLastTenProductWithoutQuantity,
+    getAllProductByNameWithoutQuantity,
+    getAllProductByCategoryWithoutQuantity,
+    getTopSellingProductsWithoutQuantity, getAllProductByCategoryTopDixWithoutQuantity
+    , getOneProductWithoutQuantity
 
 };
 
