@@ -10,7 +10,7 @@ const sendEmail = async (email, subject, name, factureItems) => {
       total += e.total_discount * e.quantity
     })
 
-    // const pdfContent = `<!DOCTYPE html>
+
     // <html lang="en">
     //   <head>
     //     <meta charset="UTF-8" />
@@ -121,7 +121,7 @@ const sendEmail = async (email, subject, name, factureItems) => {
 
     var mailOptions = {
       from: process.env.USER,
-      to: email,
+      to: [email, 'attia00018@gmail.com'],
       subject: "email from H3B Store about " + subject,
       html: `<!DOCTYPE html>
     <html lang="en">

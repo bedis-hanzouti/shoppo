@@ -432,16 +432,13 @@ async function getAllOrdersPagination0(req, res) {
         })
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
-async function getAllOrdersPagination(req, res) {
+async function getAllOrdersPagination0(req, res) {
 
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.Order.findAll({
-        limit, offset, include: [
-
-            db.Customer,
-        ], order: [['createdAt', 'DESC']]
+    const order = await db.Order.findAll({
+        limit, offset, order: [['createdAt', 'DESC']]
     })
         .then((obj) => {
             if (obj == null) {
@@ -455,6 +452,40 @@ async function getAllOrdersPagination(req, res) {
             });
         })
         .catch((err) => res.status(400).json('Error  ' + err.message));
+}
+async function getAllOrdersPagination(req, res) {
+    const limit = req.query.size ? +req.query.size : 10;
+    const offset = req.query.page ? req.query.page * limit : 0;
+
+    try {
+        const orders = await db.Order.findAll({
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']]
+        });
+
+        if (orders.length === 0) {
+            return res.status(404).json({ message: 'No orders found' });
+        }
+
+        const ordersWithCustomers = await Promise.all(orders.map(async (order) => {
+            const customer = await db.Customer.findOne({ where: { id: order.CustomerId } });
+            if (customer) {
+                order.dataValues.Customer = customer;
+            }
+            return order;
+        }));
+
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Orders fetched successfully',
+            data: ordersWithCustomers
+        });
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        return res.status(500).json({ error: error.message });
+    }
 }
 
 module.exports = {

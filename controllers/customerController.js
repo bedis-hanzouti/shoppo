@@ -104,6 +104,7 @@ async function register(req, res) {
             status: req.body.status,
             activity: req.body.activity,
             login: req.body.login,
+            phonenumber: req.body.phonenumber,
             password: hashedPassword
         });
 
@@ -296,11 +297,12 @@ async function updateUser(req, res) {
             obj.name = req.body.name || obj.name;
             obj.email = req.body.email || obj.email;
             obj.city = req.body.city || obj.city;
+            obj.phonenumber = req.body.phonenumber || obj.phonenumber;
 
             obj.status = req.body.status || obj.status;
             obj.activity = req.body.activity || obj.activity;
             obj.login = req.body.login || obj.login;
-            obj.password = obj.password;
+            // obj.password = obj.password;
             await obj.save();
             res.status(200).send(obj);
         })
