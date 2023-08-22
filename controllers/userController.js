@@ -21,8 +21,8 @@ async function login(req, res) {
         console.log(user);
         const token = jwt.sign(
             {
-                userModelId: user.id,
-                userModelN: user.name
+                id: user.id,
+
                 // isAdmin: userModel.isAdmin
             },
             secret,
@@ -36,40 +36,71 @@ async function login(req, res) {
 }
 
 async function register(req, res) {
-    // const validationResult = userSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    // if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
+    try {
+        const oldUser = await db.User.findOne({ where: { email: req.body.email } });
+        if (oldUser) {
+            return res.status(400).send({ msg: 'Email already exists' });
+        }
 
-    const t = await db.sequelize.transaction();
-    const olduser = await db.User.findOne({ where: { email: req.body.email } });
-    if (olduser) {
-        return res.status(400).send({ err: 'Email Exist' });
-    }
+        const hashedPassword = bcrypt.hashSync(req.body.password, 10);
 
-    await db.User.create({
-        name: req.body.name,
-        email: req.body.email,
-        city: req.body.city,
-        status: req.body.status,
-        activity: req.body.activity,
-        login: req.body.login,
-        password: bcrypt.hashSync(req.body.password, 10),
-
-    })
-        .then((obj) => {
-            transaction: t
-            res.json({
-                status: true,
-                message: 'success.',
-                date: obj
-            });
+        const newUser = await db.User.create({
+            name: req.body.name,
+            email: req.body.email,
+            city: req.body.city,
+            status: req.body.status,
+            activity: req.body.activity,
+            login: req.body.login,
+            phonenumber: req.body.phonenumber,
+            password: hashedPassword
         })
-        .catch(async (err) => {
-            await t.rollback();
-            res.status(400).json('Error creating ' + err.message)
-        });
+
+        if (newUser) {
+
+
+
+            const user = await db.User.findOne({
+                where: { email: newUser.email },
+                attributes: { include: ['password'] }
+            });
+
+            if (!user) {
+                return res.status(400).send({ err: 'The userModel not found' });
+            }
+
+            const match = await bcrypt.compare(req.body.password, user.password);
+
+            if (user && match) {
+                const secret = process.env.secret;
+                const token = jwt.sign(
+                    {
+                        id: user.id,
+
+                        // isAdmin: userModel.isAdmin
+                    },
+                    secret,
+                    { expiresIn: '1d' }
+                );
+
+                const userWithoutPassword = {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    city: user.city,
+                    status: user.status,
+                    activity: user.activity,
+                }
+
+                res.status(200).send({ user: userWithoutPassword, token: token });
+            } else {
+                res.status(400).send({ err: 'Password is wrong!' });
+            }
+        }
+
+
+    } catch (error) {
+        res.status(400).json('Error creating ' + error.message);
+    }
 }
 
 
@@ -97,7 +128,7 @@ async function getOneUser(req, res) {
     await db.User.findOne({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'USER NOT FOUND' });
+                res.status(400).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -135,10 +166,10 @@ async function getAllUser(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.User.findAndCountAll({ limit, offset, order: [['createdAt', 'DESC']] })
+    await db.User.findAll({ limit, offset, order: [['createdAt', 'DESC']] })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'USERS NOT FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',
@@ -160,7 +191,7 @@ async function getAllSoftUser(req, res) {
     })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'USERS NOT FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',
@@ -194,11 +225,41 @@ async function updateUser(req, res) {
             obj.name = req.body.name || obj.name;
             obj.email = req.body.email || obj.email;
             obj.city = req.body.city || obj.city;
+            obj.phonenumber = req.body.phonenumber || obj.phonenumber;
 
             obj.status = req.body.status || obj.status;
             obj.activity = req.body.activity || obj.activity;
             obj.login = req.body.login || obj.login;
-            obj.password = req.body.password || obj.password;
+            // obj.password = obj.password;
+            await obj.save();
+            res.status(200).send(obj);
+        })
+        .catch((e) => {
+            res.status(400).json({ error: e.message });
+        });
+}
+
+async function updateUserAdresse(req, res) {
+    // const validationResult = categorSchema.validate(req.body);
+    // // console.log(validationResult);
+    // if (validationResult.error)
+    //     return res.status(404).send({ error: validationResult.error.details[0].message });
+    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
+
+    await db.User.findOne({
+        where: {
+            id: req.params.id
+        }
+    })
+        .then(async (obj) => {
+            if (obj == null) {
+                res.status(400).json({});
+            }
+
+            obj.city = req.body.city || obj.city;
+
+
             await obj.save();
             res.status(200).send(obj);
         })
@@ -238,10 +299,10 @@ async function getAllStudentPagination(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.User.findAndCountAll(paginate(req.query, req.query))
+    await db.User.findAll(paginate(req.query, req.query))
         .then((obj) => {
             if (obj === null) {
-                res.status(400).json({ error: 'USER NOT FOUND' });
+                res.status(400).json([]);
             }
 
             res.status(200).json({
@@ -267,9 +328,9 @@ async function forgetPassword(req, res) {
         else {
             const token = jwt.sign(
                 {
-                    userModelId: user.id,
-                    userModelN: user.name
+                    id: user.id,
 
+                    // isAdmin: userModel.isAdmin
                 },
                 secret,
                 { expiresIn: '1d' }
@@ -323,5 +384,6 @@ module.exports = {
     RestoreOneUser,
     forgetPassword,
     resetPassword,
-    getAllStudentPagination
+    getAllStudentPagination,
+    updateUserAdresse
 };

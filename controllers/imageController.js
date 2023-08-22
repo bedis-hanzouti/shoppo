@@ -3,129 +3,106 @@ const db = require('../models');
 const Sequelize = require('sequelize');
 const fs = require('fs');
 const imageSchema = require('../config/joi_validation/imageSchema');
+const cloudinary = require('cloudinary').v2;
+
 
 const Op = Sequelize.Op;
-async function addImage(req, res) {
-    // const validationResult = categorSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    const file = req.files;
-    console.log(file);
-    if (!file) return res.status(400).send('No image in the request');
 
-    const fileName = file.filename;
-    const basePath = `/public/uploads/`;
-    // const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
-    if (!req.body.ProductId) return res.status(400).send({ err: 'ProductId is empty' });
-
-    const product = await db.Product.findOne({ where: { id: req.body.ProductId } });
-
-    if (product) {
-        db.Image.sync({ force: false }).then(() => {
-            file.forEach((obj) => {
-                db.Image.create({
-                    name: req.body.name,
-                    alt: req.body.alt,
-                    url: `${basePath}${obj.filename}`, // "http://localhost:3000/public/upload/image-2323232",
-
-                    ProductId: req.body.ProductId
-                })
-
-                    .then((obj) => {
-                        return res.status(200).send(obj);
-                    })
-                    .catch((e) => {
-                        file.forEach(async (obj) => {
-                            await fs.unlink(obj.path, (err) => {
-                                if (err) {
-                                    console.log('error in deleting a file from uploads');
-                                } else {
-                                    console.log('succesfully deleted from the uploads folder');
-                                }
-                            });
-                        });
-
-                        return res.status(400).send(e.message);
-                    });
-            });
+async function cloudinaryImageUploadMethod(file) {
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader.upload(file, (err, res) => {
+            if (err) {
+                reject(new Error(err));
+            } else {
+                resolve(res);
+            }
         });
-    } else {
-        res.status(400).json({ error: 'product not found' });
+    });
+}
+
+
+
+
+async function uploadFilee(req) {
+
+    const urls = [];
+
+
+    const { path } = req;
+
+
+    const newPath = await cloudinaryImageUploadMethod(path)
+    urls.push(newPath);
+    return newPath
+}
+
+async function addImage(req, res) {
+    const files = req.files;
+
+    if (!files) {
+        return res.status(400).json({ error: 'No image in the request' });
+    }
+
+    if (!req.body.ProductId) {
+        return res.status(400).json({ error: 'Product ID is required' });
+    }
+
+    try {
+        const product = await db.Product.findOne({ where: { id: req.body.ProductId } });
+
+        if (product) {
+            let orderCounter = 0;
+            let image;
+            for (const file of files) {
+                try {
+                    orderCounter++;
+                    const uploadedFile = await uploadFilee(file);
+
+                    image = await db.Image.create({
+                        name: uploadedFile.original_filename,
+                        alt: req.body.alt,
+                        order: orderCounter,
+                        url: uploadedFile.secure_url,
+                        ProductId: product.id
+                    });
+
+                    await fs.unlinkSync(file.path);
+                } catch (error) {
+                    console.error('Error uploading file:', error);
+                }
+            }
+
+            return res.status(201).json(image);
+        } else {
+            return res.status(400).json({ error: 'Product not found' });
+        }
+    } catch (error) {
+        console.error('Error adding images:', error);
+        return res.status(500).json({ error: error.message });
     }
 }
 
 async function updateImage(req, res) {
-    // if (!req.params.id) return res.status(400).send({ err: 'categoryId is empty' });
+    try {
+        const image = await db.Image.findOne({ where: { id: req.params.id } });
 
-    // const validationResult = imageSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    const file = req.file;
+        if (image) {
 
-    if (file) {
-        const fileName = file.filename;
-        // const basePath = `${req.protocol}://${req.get('host')}/public/uploads/`;
-        const basePath = `/public/uploads/`;
-        imagepath = `${basePath}${fileName}`;
-        await db.Category.findOne({
-            where: {
-                id: req.params.id
-            }
-        })
-            .then(async (obj) => {
-                if (obj == null) {
-                    res.status(400).json({ error: 'IMAGE NOT FOUND' });
-                }
-                obj.alt = fileName;
-                obj.name = req.body.name || obj.name;
-                obj.url = `${basePath}${fileName}`;
-                obj.product_id = req.body.product_id || obj.product_id;
-
-                await obj.save();
-                res.status(200).send(obj);
-            })
-            .catch(async (e) => {
-                await fs.unlink(file.path, (err) => {
-                    if (err) {
-                        console.log('error in deleting a file from uploads');
-                    } else {
-                        console.log('succesfully deleted from the uploads folder');
-                    }
-                });
-                res.status(400).json(e.message);
+            await image.update({
+                alt: req.body.alt || image.alt,
+                order: req.body.order || image.order,
             });
-    } else {
-        await db.Category.findOne({
-            where: {
-                id: req.params.id
-            }
-        })
-            .then(async (obj) => {
-                if (obj == null) {
-                    res.status(400).json({ error: 'IMAGE NOT FOUND' });
-                }
-                obj.name = req.body.name || obj.name;
-                obj.alt = obj.alt;
-                obj.url = obj.url;
-                obj.product_id = req.body.product_id || obj.product_id;
 
-                await obj.save();
-                res.status(200).send(obj);
-            })
-            .catch(async (e) => {
-                await fs.unlink(file.path, (err) => {
-                    if (err) {
-                        console.log('error in deleting a file from uploads');
-                    } else {
-                        console.log('succesfully deleted from the uploads folder');
-                    }
-                });
-                res.status(400).json(e.message);
-            });
+            return res.status(200).json(image);
+        } else {
+            return res.status(400).json({ error: 'Image not found' });
+        }
+    } catch (error) {
+        console.error('Error updating image:', error);
+        return res.status(500).json({ error: error.message });
     }
 }
+
 async function deletImage(req, res) {
     // if (!req.params.id) return res.status(400).send({ err: 'imageId is empty' });
 
@@ -148,7 +125,7 @@ async function getOneImage(req, res) {
     await db.Image.findOne({ where: { id: req.params.id } })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'IMAGE NOT FOUND' });
+                res.status(400).json({});
             }
             res.status(200).json({
                 status: 'success',
@@ -167,7 +144,7 @@ async function getAllSoftImage(req, res) {
     })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'NO IMAGE FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',
@@ -197,10 +174,10 @@ async function RestoreOneImage(req, res) {
 }
 
 async function getAllImage(req, res) {
-    await db.Image.findAndCountAll()
+    await db.Image.findAll()
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'NO IMAGE FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',

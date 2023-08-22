@@ -2,10 +2,91 @@ const db = require('../models');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const orderSchema = require('../config/joi_validation/orderSchema')
+const customerController = require('../controllers/customerController')
+const sendEmail = require("../config/sendMail");
 
 
 
 
+
+
+async function addNewOrder0(req, res) {
+
+    try {
+        varp = []
+        const orderData = req.body;
+        const customerId = orderData.customer_id;
+        const orderLines = orderData.orderLines;
+
+        const customer = await db.Customer.findOne({
+            where: {
+                id: customerId,
+            },
+            // transaction: t,
+        });
+
+        if (!customer) {
+            // await t.rollback();
+            return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
+        }
+
+        const order = await db.Order.create({
+            // pending: Sequelize.fn('now'),
+            shipping: orderData.shipping,
+            total: orderData.total,
+            discount: orderData.discount || 0,
+            quantity: orderData.quantity,
+            total_discount: orderData.total_discount,
+            CustomerId: customer.id,
+            // transaction: t, 
+        });
+        const factureItems = [];
+        // Create the order lines
+        if (orderLines && orderLines.length > 0) {
+            for (const orderLineData of orderLines) {
+                const { orderQuantity, price, discount, total, total_discount, productId, quantity } = orderLineData;
+
+                const orderLine = await db.OrderLine.create({
+                    orderQuantity,
+                    price,
+                    quantity,
+                    discount,
+                    total,
+                    total_discount,
+                    OrderId: order.id,
+                    ProductId: productId,
+                });
+
+
+                const product = await db.Product.findOne({
+                    where: {
+                        id: productId,
+                    },
+                });
+
+
+                const factureItem = {
+                    productName: product.name,
+                    quantity: quantity,
+                    total_discount,
+
+                };
+
+                factureItems.push(factureItem);
+            }
+        }
+        console.log("customer_email",customer.email);
+
+
+        await sendEmail(customer.email, "Order Confirmation", customer.name, factureItems);
+
+        return res.status(201).json({ message: 'Order created', order });
+    } catch (error) {
+        console.error('Error creating order:', error);
+        // await t.rollback();
+        return res.status(500).json({ error: error.message });
+    }
+}
 
 async function addNewOrder(req, res) {
     // const validationResult = orderSchema.validate(req.body);
@@ -14,61 +95,84 @@ async function addNewOrder(req, res) {
     //     return res.status(404).send({ error: validationResult.error.details[0].message });
 
 
-    const t = await db.sequelize.transaction();
+    // const t = await db.sequelize.transaction();
     try {
+        varp = []
         const orderData = req.body;
         const customerId = orderData.customer_id;
         const orderLines = orderData.orderLines;
-        if (!customerId) return res.status(400).send({ err: 'customerId is empty' });
 
         const customer = await db.Customer.findOne({
             where: {
                 id: customerId,
             },
-            transaction: t,
+            // transaction: t,
         });
 
         if (!customer) {
-            await t.rollback();
+            // await t.rollback();
             return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
         }
 
         const order = await db.Order.create({
-            pending: Date.now(),
+            // pending: Sequelize.fn('now'),
+            shipping: orderData.shipping,
             total: orderData.total,
             discount: orderData.discount || 0,
             quantity: orderData.quantity,
             total_discount: orderData.total_discount,
             CustomerId: customer.id,
-            transaction: t,
+            // transaction: t, 
         });
-
+        const factureItems = [];
         // Create the order lines
         if (orderLines && orderLines.length > 0) {
             for (const orderLineData of orderLines) {
-                const { orderQuantity, price, discount, total, total_discount, productId } = orderLineData;
+                const { orderQuantity, price, discount, total, total_discount, productId, quantity } = orderLineData;
 
-                await db.OrderLine.create({
+                const orderLine = await db.OrderLine.create({
                     orderQuantity,
                     price,
+                    quantity,
                     discount,
                     total,
                     total_discount,
                     OrderId: order.id,
                     ProductId: productId,
-                    transaction: t,
                 });
+
+
+                const product = await db.Product.findOne({
+                    where: {
+                        id: productId,
+                    },
+                });
+
+
+                const factureItem = {
+                    productName: product.name,
+                    quantity: quantity,
+                    total_discount,
+
+                };
+
+                factureItems.push(factureItem);
             }
         }
-        await t.commit();
+        console.log("customer_email", customer.email);
+
+
+        await sendEmail(customer.email, "Order Confirmation", customer.name, factureItems);
 
         return res.status(201).json({ message: 'Order created', order });
     } catch (error) {
         console.error('Error creating order:', error);
-        await t.rollback();
-        return res.status(500).json({ error: 'Internal server error' });
+        // await t.rollback();
+        return res.status(500).json({ error: error.message });
     }
 }
+
+
 
 
 
@@ -79,7 +183,7 @@ async function updateOrder(req, res) {
     // // console.log(validationResult);
     // if (validationResult.error)
     //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
+    // if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
 
     try {
         const orderId = req.params.id;
@@ -94,10 +198,12 @@ async function updateOrder(req, res) {
             return res.status(400).json({ error: 'Order NOT FOUND' });
         }
 
-        order.pending = req.body.pending ? Date.now() : order.pending;
-        order.canceled = req.body.canceled ? Date.now() : order.canceled;
-        order.delivered = req.body.delivered ? Date.now() : order.delivered;
-        order.expedied = req.body.expedied ? Date.now() : order.expedied;
+        order.pending = order.pending;
+        // order.shipping = req.body.shipping || order.shipping
+        // order.canceled = req.body.canceled === 'canceled' ? Sequelize.fn('now') : order.canceled;
+        // order.confirmed = req.body.confirmed === 'confirmed' ? Sequelize.fn('now') : order.confirmed;
+        // order.delivered = req.body.delivered === 'delivered' ? Sequelize.fn('now') : order.delivered;
+        // order.expedied = req.body.expedied === "expedied" ? Sequelize.fn('now') : order.expedied;
         order.total = req.body.total || order.total;
         order.total_discount = req.body.total_discount || order.total_discount;
         order.quantity = req.body.quantity || order.quantity;
@@ -131,28 +237,95 @@ async function deleteOrder(req, res) {
 }
 
 async function getOneOrder(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
+    try {
+        const order = await db.Order.findOne({
+            where: { id: req.params.id }
+        });
 
-    await db.Order.findOne({ where: { id: req.params.id }, include: [db.Customer, db.OrderLine] })
-        .then((obj) => {
-            if (obj == null) {
-                res.status(400).json({ error: 'Order NOT FOUND' });
-            }
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        // Fetch the customer using the CustomerId from the order
+        const customer = await db.Customer.findOne({
+            where: { id: order.CustomerId }
+        });
+
+        const orderWithLines = await db.Order.findOne({
+            where: { id: req.params.id },
+            include: [
+                { model: db.OrderLine, include: [{ model: db.Product }] }
+            ]
+        });
+
+        if (!orderWithLines) {
+            return res.status(400).json({});
+        }
+
+
+        orderWithLines.dataValues.customer = customer;
+
+
+        res.status(200).json({
+            status: 'success',
+            data: orderWithLines
+        });
+    } catch (error) {
+        console.error("Error getting order:", error);
+        res.status(500).json({ error: "Error getting order" });
+    }
+}
+
+
+async function getOneOrderWithProduct(req, res) {
+    try {
+        const order = await db.Order.findOne({
+            where: { id: req.params.id },
+            include: [{
+                model: db.OrderLine,
+                include: [{ model: db.Product }],
+                order: [['createdAt', 'DESC']]
+            }]
+        });
+
+        if (order === null) {
+            res.status(400).json({});
+        } else {
+            const product = order.OrderLines.map(orderLine => orderLine.Product);
+
+            const orderData = {
+                id: order.id,
+                pending: order.pending,
+                canceled: order.canceled,
+                delivered: order.delivered,
+                expedied: order.expedied,
+                total: order.total,
+                total_discount: order.total_discount,
+                quantity: order.quantity,
+                discount: order.discount,
+                createdAt: order.createdAt,
+                updatedAt: order.updatedAt,
+                deletedAt: order.deletedAt,
+                CustomerId: order.CustomerId,
+
+                Product: product
+
+            };
             res.status(200).json({
                 status: 'success',
-                totalPrice: obj.total,
 
-                data: obj
-
+                data: orderData
             });
-        })
-        .catch((err) => res.status(400).json('Error getting ' + err.message));
+        }
+    } catch (err) {
+        res.status(400).json('Error getting ' + err.message);
+    }
 }
 
 
 
+
 async function getOrderByCustomer(req, res) {
-    if (!req.params.id) return res.status(400).send({ err: 'customerId is empty' });
 
 
     try {
@@ -163,11 +336,14 @@ async function getOrderByCustomer(req, res) {
             where: {
                 CustomerId: customerId,
             },
-            include: [db.OrderLine],
+            include: [{
+
+                model: db.OrderLine, include: [{ model: db.Product }],
+            }], order: [['createdAt', 'DESC']]
         });
 
         if (orders.length === 0) {
-            return res.status(400).json({ error: 'Orders NOT FOUND' });
+            return res.status(400).json([]);
         }
 
         let totalAmount = 0;
@@ -201,7 +377,7 @@ async function getAllSoftOrders(req, res) {
     })
         .then((obj) => {
             if (obj == null) {
-                res.status(400).json({ error: 'Orders NOT FOUND' });
+                res.status(400).json([]);
             }
             res.status(200).json({
                 status: 'success',
@@ -238,7 +414,7 @@ async function getAllOrdersPagination0(req, res) {
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.Order.findAndCountAll({ include: db.Customer }, paginate(req.query, req.query))
+    await db.Order.findAll({ include: db.Customer }, paginate(req.query, req.query))
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({ error: 'Orders NOT FOUND' });
@@ -256,21 +432,60 @@ async function getAllOrdersPagination0(req, res) {
         })
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
-async function getAllOrdersPagination(req, res) {
+async function getAllOrdersPagination0(req, res) {
 
 
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
-    await db.Order.findAll({ limit, offset, order: [['createdAt', 'DESC']] })
+    const order = await db.Order.findAll({
+        limit, offset, order: [['createdAt', 'DESC']]
+    })
         .then((obj) => {
+            if (obj == null) {
+                res.status(400).json([]);
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'status getted',
                 data: obj
-                //   user:doc.payload.userN
+
             });
         })
         .catch((err) => res.status(400).json('Error  ' + err.message));
+}
+async function getAllOrdersPagination(req, res) {
+    const limit = req.query.size ? +req.query.size : 10;
+    const offset = req.query.page ? req.query.page * limit : 0;
+
+    try {
+        const orders = await db.Order.findAll({
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']]
+        });
+
+        if (orders.length === 0) {
+            return res.status(404).json({ message: 'No orders found' });
+        }
+
+        const ordersWithCustomers = await Promise.all(orders.map(async (order) => {
+            const customer = await db.Customer.findOne({ where: { id: order.CustomerId } });
+            if (customer) {
+                order.dataValues.Customer = customer;
+            }
+            return order;
+        }));
+
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Orders fetched successfully',
+            data: ordersWithCustomers
+        });
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        return res.status(500).json({ error: error.message });
+    }
 }
 
 module.exports = {
@@ -282,5 +497,5 @@ module.exports = {
     deleteOrder,
     updateOrder,
     getOrderByCustomer,
-
+    getOneOrderWithProduct
 };

@@ -8,6 +8,8 @@ const productSchema = Joi.object({
     quantity: Joi.number().integer().required(),
     discount: Joi.number().integer().default(0),
     brand: Joi.string().required(),
+    categories: Joi.required(),
+    UserId: Joi.number().integer().required(),
 });
 
 module.exports = productSchema;

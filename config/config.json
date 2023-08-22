@@ -1,10 +1,10 @@
 {
     "development": {
-        "username": "hbtn_H3B_admin",
-        "password": "ykyBhfNEZ1",
-        "database": "hbtn_commerce",
-        "host": "www.h3b.tn",
-        "dialect": "mysql"
+        "username": "postgres",
+        "password": "toor",
+        "database": "commerce",
+        "host": "localhost",
+        "dialect": "postgres"
     },
     "test": {
         "username": "hbtn_H3B_admin",

@@ -25,24 +25,25 @@ module.exports = (sequelize, DataTypes) => {
             status: { type: DataTypes.STRING, allowNull: false },
             activity: { type: DataTypes.STRING, allowNull: false },
             password: { type: DataTypes.STRING, allowNull: false },
+            phonenumber: { type: DataTypes.STRING, allowNull: false },
+
             login: { type: DataTypes.STRING, allowNull: false }
         },
         {
             sequelize,
-            paranoid: true
-            // defaultScope: {
-            //   attributes: {
-            //     exclude: ['password']
-            //   },
+            paranoid: true,
+            defaultScope: {
+                attributes: {
+                    exclude: ['password']
+                },
 
-            // },
-        }
-    );
-    User.associate = (models) => {
-        User.hasMany(models.Product, {
-            onDelete: 'cascade'
+            },
         });
-    };
+    // User.associate = (models) => {
+    //     User.hasMany(models.Product, {
+    //         onDelete: 'cascade'
+    //     });
+    // };
 
     return User;
 };
