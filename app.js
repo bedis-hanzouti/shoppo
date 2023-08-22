@@ -9,7 +9,7 @@ const db = require('./models');
 var path = require('path');
 const figlet = require('figlet');
 const userMiddleware = require('./helpers/middleware/userMiddleware');
-const fileUpload = require('express-fileupload')
+const fileUpload = require('express-fileupload');
 
 db.Sequelize = Sequelize;
 
@@ -39,7 +39,6 @@ app.use((req, res, next) => {
     res.on('finish', () => {
         const end = new Date();
         const responseTime = end - start;
-        console.log(res);
         const logEntry = {
             timestamp: new Date().toISOString(),
             method: req.method,
@@ -83,18 +82,18 @@ app.use(`${api}/orders`, ordersRoutes);
 app.use(`${api}/orderslines`, ordersLinesRoutes);
 
 db.sequelize
-    .sync({ alter: false, force: false })
+    .sync({ alter: true, force: false })
     .then(() => {
-        app.listen(3000, () => {
+        app.listen(3200, () => {
             console.log('server running in port 3000');
 
             figlet('H3B - ENGINE', function (err, data) {
                 if (err) {
                     console.log('Something went wrong...');
-                    console.dir(err);
+                    //    console.dir(err);
                     return;
                 }
-                console.log(data);
+                //   console.log(data);
             });
         });
     })
