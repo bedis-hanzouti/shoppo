@@ -13,15 +13,15 @@ let sequelize;
 //if (config.use_env_variable) {
 //  sequelize = new Sequelize( config);
 //} else {
-sequelize = new Sequelize('commerce', 'root', '', {
-    host: '127.0.0.1',
-    dialect: 'mysql'
-});
-
-// sequelize = new Sequelize('hbtn_commerce', 'hbtn_H3B_admin', 'ykyBhfNEZ1', {
-//     host: 'www.h3b.tn',
+// sequelize = new Sequelize('commerce', 'root', '', {
+//     host: '127.0.0.1',
 //     dialect: 'mysql'
 // });
+
+sequelize = new Sequelize('hbtn_commerce', 'hbtn_H3B_admin', 'ykyBhfNEZ1', {
+    host: 'www.h3b.tn',
+    dialect: 'mysql'
+});
 
 fs.readdirSync(__dirname)
     .filter((file) => {
