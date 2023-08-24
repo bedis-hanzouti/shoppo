@@ -1,27 +1,21 @@
 const db = require('../models');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-const orderSchema = require('../config/joi_validation/orderSchema')
-const customerController = require('../controllers/customerController')
-const sendEmail = require("../config/sendMail");
-
-
-
-
-
+const orderSchema = require('../config/joi_validation/orderSchema');
+const customerController = require('../controllers/customerController');
+const sendEmail = require('../config/sendMail');
 
 async function addNewOrder0(req, res) {
-
     try {
-        varp = []
+        varp = [];
         const orderData = req.body;
         const customerId = orderData.customer_id;
         const orderLines = orderData.orderLines;
 
         const customer = await db.Customer.findOne({
             where: {
-                id: customerId,
-            },
+                id: customerId
+            }
             // transaction: t,
         });
 
@@ -37,14 +31,22 @@ async function addNewOrder0(req, res) {
             discount: orderData.discount || 0,
             quantity: orderData.quantity,
             total_discount: orderData.total_discount,
-            CustomerId: customer.id,
-            // transaction: t, 
+            CustomerId: customer.id
+            // transaction: t,
         });
         const factureItems = [];
         // Create the order lines
         if (orderLines && orderLines.length > 0) {
             for (const orderLineData of orderLines) {
-                const { orderQuantity, price, discount, total, total_discount, productId, quantity } = orderLineData;
+                const {
+                    orderQuantity,
+                    price,
+                    discount,
+                    total,
+                    total_discount,
+                    productId,
+                    quantity
+                } = orderLineData;
 
                 const orderLine = await db.OrderLine.create({
                     orderQuantity,
@@ -54,31 +56,27 @@ async function addNewOrder0(req, res) {
                     total,
                     total_discount,
                     OrderId: order.id,
-                    ProductId: productId,
+                    ProductId: productId
                 });
-
 
                 const product = await db.Product.findOne({
                     where: {
-                        id: productId,
-                    },
+                        id: productId
+                    }
                 });
-
 
                 const factureItem = {
                     productName: product.name,
                     quantity: quantity,
-                    total_discount,
-
+                    total_discount
                 };
 
                 factureItems.push(factureItem);
             }
         }
-        console.log("customer_email",customer.email);
+        console.log('customer_email', customer.email);
 
-
-        await sendEmail(customer.email, "Order Confirmation", customer.name, factureItems);
+        await sendEmail(customer.email, 'Order Confirmation', customer.name, factureItems);
 
         return res.status(201).json({ message: 'Order created', order });
     } catch (error) {
@@ -94,18 +92,17 @@ async function addNewOrder(req, res) {
     // if (validationResult.error)
     //     return res.status(404).send({ error: validationResult.error.details[0].message });
 
-
     // const t = await db.sequelize.transaction();
     try {
-        varp = []
+        varp = [];
         const orderData = req.body;
         const customerId = orderData.customer_id;
         const orderLines = orderData.orderLines;
 
         const customer = await db.Customer.findOne({
             where: {
-                id: customerId,
-            },
+                id: customerId
+            }
             // transaction: t,
         });
 
@@ -121,14 +118,22 @@ async function addNewOrder(req, res) {
             discount: orderData.discount || 0,
             quantity: orderData.quantity,
             total_discount: orderData.total_discount,
-            CustomerId: customer.id,
-            // transaction: t, 
+            CustomerId: customer.id
+            // transaction: t,
         });
         const factureItems = [];
         // Create the order lines
         if (orderLines && orderLines.length > 0) {
             for (const orderLineData of orderLines) {
-                const { orderQuantity, price, discount, total, total_discount, productId, quantity } = orderLineData;
+                const {
+                    orderQuantity,
+                    price,
+                    discount,
+                    total,
+                    total_discount,
+                    productId,
+                    quantity
+                } = orderLineData;
 
                 const orderLine = await db.OrderLine.create({
                     orderQuantity,
@@ -138,31 +143,27 @@ async function addNewOrder(req, res) {
                     total,
                     total_discount,
                     OrderId: order.id,
-                    ProductId: productId,
+                    ProductId: productId
                 });
-
 
                 const product = await db.Product.findOne({
                     where: {
-                        id: productId,
-                    },
+                        id: productId
+                    }
                 });
-
 
                 const factureItem = {
                     productName: product.name,
                     quantity: quantity,
-                    total_discount,
-
+                    total_discount
                 };
 
                 factureItems.push(factureItem);
             }
         }
-        console.log("customer_email", customer.email);
+        console.log('customer_email', customer.email);
 
-
-        await sendEmail(customer.email, "Order Confirmation", customer.name, factureItems);
+        await sendEmail(customer.email, 'Order Confirmation', customer.name, factureItems);
 
         return res.status(201).json({ message: 'Order created', order });
     } catch (error) {
@@ -171,12 +172,6 @@ async function addNewOrder(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
-
-
-
-
-
-
 
 async function updateOrder(req, res) {
     // const validationResult = orderSchema.validate(req.body);
@@ -190,8 +185,8 @@ async function updateOrder(req, res) {
 
         const order = await db.Order.findOne({
             where: {
-                id: orderId,
-            },
+                id: orderId
+            }
         });
 
         if (!order) {
@@ -199,11 +194,13 @@ async function updateOrder(req, res) {
         }
 
         order.pending = order.pending;
-        // order.shipping = req.body.shipping || order.shipping
-        // order.canceled = req.body.canceled === 'canceled' ? Sequelize.fn('now') : order.canceled;
-        // order.confirmed = req.body.confirmed === 'confirmed' ? Sequelize.fn('now') : order.confirmed;
-        // order.delivered = req.body.delivered === 'delivered' ? Sequelize.fn('now') : order.delivered;
-        // order.expedied = req.body.expedied === "expedied" ? Sequelize.fn('now') : order.expedied;
+        order.shipping = req.body.shipping || order.shipping;
+        order.canceled = req.body.canceled === 'canceled' ? Sequelize.fn('now') : order.canceled;
+        order.confirmed =
+            req.body.confirmed === 'confirmed' ? Sequelize.fn('now') : order.confirmed;
+        order.delivered =
+            req.body.delivered === 'delivered' ? Sequelize.fn('now') : order.delivered;
+        order.expedied = req.body.expedied === 'expedied' ? Sequelize.fn('now') : order.expedied;
         order.total = req.body.total || order.total;
         order.total_discount = req.body.total_discount || order.total_discount;
         order.quantity = req.body.quantity || order.quantity;
@@ -218,8 +215,6 @@ async function updateOrder(req, res) {
         return res.status(400).json({ error: error.message });
     }
 }
-
-
 
 async function deleteOrder(req, res) {
     await db.Order.destroy({ where: { id: req.params.id } })
@@ -253,45 +248,42 @@ async function getOneOrder(req, res) {
 
         const orderWithLines = await db.Order.findOne({
             where: { id: req.params.id },
-            include: [
-                { model: db.OrderLine, include: [{ model: db.Product }] }
-            ]
+            include: [{ model: db.OrderLine, include: [{ model: db.Product }] }]
         });
 
         if (!orderWithLines) {
             return res.status(400).json({});
         }
 
-
         orderWithLines.dataValues.customer = customer;
-
 
         res.status(200).json({
             status: 'success',
             data: orderWithLines
         });
     } catch (error) {
-        console.error("Error getting order:", error);
-        res.status(500).json({ error: "Error getting order" });
+        console.error('Error getting order:', error);
+        res.status(500).json({ error: 'Error getting order' });
     }
 }
-
 
 async function getOneOrderWithProduct(req, res) {
     try {
         const order = await db.Order.findOne({
             where: { id: req.params.id },
-            include: [{
-                model: db.OrderLine,
-                include: [{ model: db.Product }],
-                order: [['createdAt', 'DESC']]
-            }]
+            include: [
+                {
+                    model: db.OrderLine,
+                    include: [{ model: db.Product }],
+                    order: [['createdAt', 'DESC']]
+                }
+            ]
         });
 
         if (order === null) {
             res.status(400).json({});
         } else {
-            const product = order.OrderLines.map(orderLine => orderLine.Product);
+            const product = order.OrderLines.map((orderLine) => orderLine.Product);
 
             const orderData = {
                 id: order.id,
@@ -309,7 +301,6 @@ async function getOneOrderWithProduct(req, res) {
                 CustomerId: order.CustomerId,
 
                 Product: product
-
             };
             res.status(200).json({
                 status: 'success',
@@ -322,24 +313,22 @@ async function getOneOrderWithProduct(req, res) {
     }
 }
 
-
-
-
 async function getOrderByCustomer(req, res) {
-
-
     try {
         const customerId = req.params.id;
         console.log(customerId);
 
         const orders = await db.Order.findAll({
             where: {
-                CustomerId: customerId,
+                CustomerId: customerId
             },
-            include: [{
-
-                model: db.OrderLine, include: [{ model: db.Product }],
-            }], order: [['createdAt', 'DESC']]
+            include: [
+                {
+                    model: db.OrderLine,
+                    include: [{ model: db.Product }]
+                }
+            ],
+            order: [['createdAt', 'DESC']]
         });
 
         if (orders.length === 0) {
@@ -354,7 +343,7 @@ async function getOrderByCustomer(req, res) {
         return res.status(200).json({
             status: 'success',
             totalPrice: totalAmount,
-            data: orders,
+            data: orders
         });
     } catch (error) {
         console.error('Error getting orders:', error);
@@ -362,13 +351,7 @@ async function getOrderByCustomer(req, res) {
     }
 }
 
-
-
-
-
-
 async function getAllSoftOrders(req, res) {
-
     await db.Order.findAll({
         where: { deletedAt: { [Op.not]: null } },
         include: [db.Customer, db.OrderLine],
@@ -433,12 +416,12 @@ async function getAllOrdersPagination0(req, res) {
         .catch((err) => res.status(400).json('Error deleting ' + err.message));
 }
 async function getAllOrdersPagination0(req, res) {
-
-
     const limit = req.query.size ? +req.query.size : 10;
     const offset = req.query.page ? req.query.page * limit : 0;
     const order = await db.Order.findAll({
-        limit, offset, order: [['createdAt', 'DESC']]
+        limit,
+        offset,
+        order: [['createdAt', 'DESC']]
     })
         .then((obj) => {
             if (obj == null) {
@@ -448,7 +431,6 @@ async function getAllOrdersPagination0(req, res) {
                 status: 'success',
                 message: 'status getted',
                 data: obj
-
             });
         })
         .catch((err) => res.status(400).json('Error  ' + err.message));
@@ -468,14 +450,15 @@ async function getAllOrdersPagination(req, res) {
             return res.status(404).json({ message: 'No orders found' });
         }
 
-        const ordersWithCustomers = await Promise.all(orders.map(async (order) => {
-            const customer = await db.Customer.findOne({ where: { id: order.CustomerId } });
-            if (customer) {
-                order.dataValues.Customer = customer;
-            }
-            return order;
-        }));
-
+        const ordersWithCustomers = await Promise.all(
+            orders.map(async (order) => {
+                const customer = await db.Customer.findOne({ where: { id: order.CustomerId } });
+                if (customer) {
+                    order.dataValues.Customer = customer;
+                }
+                return order;
+            })
+        );
 
         res.status(200).json({
             status: 'success',
