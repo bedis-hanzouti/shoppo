@@ -8,8 +8,6 @@ const fs = require('fs');
 const db = require('./models');
 var path = require('path');
 const figlet = require('figlet');
-const userMiddleware = require('./helpers/middleware/userMiddleware');
-const fileUpload = require('express-fileupload');
 
 db.Sequelize = Sequelize;
 

@@ -5,14 +5,10 @@ const Op = Sequelize.Op;
 const db = require('../models');
 const fs = require('fs');
 
-
 const cloudinary = require('cloudinary').v2;
 
-
-
-const productSchema = require('../config/joi_validation/productSchema')
-const imageSchema = require('../config/joi_validation/imageSchema')
-
+const productSchema = require('../config/joi_validation/productSchema');
+const imageSchema = require('../config/joi_validation/imageSchema');
 
 async function cloudinaryImageUploadMethod(file) {
     return new Promise((resolve, reject) => {
@@ -26,20 +22,14 @@ async function cloudinaryImageUploadMethod(file) {
     });
 }
 
-
-
-
 async function uploadFilee(req) {
-
     const urls = [];
-
 
     const { path } = req;
 
-
-    const newPath = await cloudinaryImageUploadMethod(path)
+    const newPath = await cloudinaryImageUploadMethod(path);
     urls.push(newPath);
-    return newPath
+    return newPath;
 }
 
 cloudinary.config({
@@ -48,11 +38,6 @@ cloudinary.config({
     api_secret: 'OiuLiPg_SUTQR9B9KIM-uy05nMM'
 });
 
-
-
-
-
-
 async function addProduct(req, res) {
     const files = req.files;
 
@@ -60,7 +45,9 @@ async function addProduct(req, res) {
         return res.status(400).send('No image in the request');
     }
 
-    const categories = Array.isArray(req.body.categories) ? req.body.categories : [req.body.categories];
+    const categories = Array.isArray(req.body.categories)
+        ? req.body.categories
+        : [req.body.categories];
 
     if (!categories || categories.length === 0) {
         return res.status(400).json({ error: 'Categories are empty' });
@@ -73,7 +60,9 @@ async function addProduct(req, res) {
             return res.status(400).json({ error: 'User not found' });
         }
 
-        const foundCategories = await db.Category.findAll({ where: { id: { [Op.in]: categories } } });
+        const foundCategories = await db.Category.findAll({
+            where: { id: { [Op.in]: categories } }
+        });
 
         if (foundCategories.length !== categories.length) {
             return res.status(400).json({ error: 'One or more categories not found' });
@@ -89,20 +78,21 @@ async function addProduct(req, res) {
             brand: req.body.brand,
             prix_discount: req.body.prix_discount,
             UserId: user.id
-
         });
 
         if (!product) {
             return res.status(400).json({ error: 'Error creating product' });
         }
 
-        await Promise.all(foundCategories.map(async (cat) => {
-            await db.Product_category.create({
-                CategoryId: cat.id,
-                ProductId: product.id
-            });
-        }));
-        var i = 0
+        await Promise.all(
+            foundCategories.map(async (cat) => {
+                await db.Product_category.create({
+                    CategoryId: cat.id,
+                    ProductId: product.id
+                });
+            })
+        );
+        var i = 0;
         for (const file of files) {
             try {
                 i++;
@@ -115,7 +105,6 @@ async function addProduct(req, res) {
                             reject(error);
                         }
                         fs.unlinkSync(file.path);
-
                     }, 1000); // Change the timeout value as needed
                     // fs.unlinkSync(file.path);
                 });
@@ -141,17 +130,6 @@ async function addProduct(req, res) {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
 async function deletProduct0(req, res) {
     // if (!req.params.id) return res.status(400).send({ err: 'productId is empty' });
 
@@ -175,7 +153,9 @@ async function deletProduct(req, res) {
     const productId = req.params.id;
 
     try {
-        const orderLineWithProduct = await db.OrderLine.findOne({ where: { ProductId: productId } });
+        const orderLineWithProduct = await db.OrderLine.findOne({
+            where: { ProductId: productId }
+        });
 
         if (orderLineWithProduct) {
             return res.status(400).json({ error: 'Product exists in orders, cannot delete' });
@@ -202,52 +182,79 @@ async function deletProduct(req, res) {
     }
 }
 
+// async function getOneProduct(req, res) {
+//     try {
+//         const product = await db.Product.findOne({
+//             where: { id: req.params.id },
+//             include: [
+//                 {
+//                     model: db.Product_category,
+//                     // attributes: [], // Exclude all attributes from the join table
+//                     include: [
+//                         { model: db.Category, attributes: ['id', 'name', 'description', 'url', 'createdAt', 'updatedAt', 'deletedAt'] }
+//                     ]
+//                 }
+//             ],
+//         });
+
+//         if (!product) {
+//             return res.status(404).json({ message: 'Product not found' });
+//         }
+
+//         const categories = product.Product_categories.map(pc => pc.Category);
+
+//         res.status(200).json({
+//             status: 'success',
+//             data: categories
+//         });
+//     } catch (error) {
+//         console.error('Error getting category for product:', error);
+//         return res.status(500).json({ error: error.message });
+//     }
+// }
+
 async function getOneProduct(req, res) {
-    try {
-        const product = await db.Product.findOne({
-            where: { id: req.params.id },
-            include: [
-                {
-                    model: db.Product_category,
-                    // attributes: [], // Exclude all attributes from the join table
-                    include: [
-                        { model: db.Category, attributes: ['id', 'name', 'description', 'url', 'createdAt', 'updatedAt', 'deletedAt'] }
-                    ]
-                }
-            ],
-        });
+    await db.Product.findOne({
+        where: { id: req.params.id },
+        include: [
+            {
+                model: db.Product_category,
+                include: [{ model: db.Category }],
 
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
-        }
+                // raw: true,
+                order: [['createdAt', 'DESC']]
+            },
+            { model: db.Image }
+        ]
+    })
+        .then((obj) => {
+            if (obj == null) {
+                res.status(400).json({});
+            }
+            res.status(200).json({
+                status: 'success',
 
-        const categories = product.Product_categories.map(pc => pc.Category);
-
-        res.status(200).json({
-            status: 'success',
-            data: categories
-        });
-    } catch (error) {
-        console.error('Error getting category for product:', error);
-        return res.status(500).json({ error: error.message });
-    }
+                data: obj
+                //   user:doc.payload.userN
+            });
+        })
+        .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
-
 async function getOneProductWithoutQuantity(req, res) {
-
-
     await db.Product.findOne({
         attributes: { exclude: ['quantity'] },
 
         where: { id: req.params.id },
-        include: [{
-            model: db.Product_category, include: [{ model: db.Category }],
+        include: [
+            {
+                model: db.Product_category,
+                include: [{ model: db.Category }],
 
-            // raw: true,
-            order: [['createdAt', 'DESC']]
-
-
-        }, { model: db.Image }],
+                // raw: true,
+                order: [['createdAt', 'DESC']]
+            },
+            { model: db.Image }
+        ]
     })
         .then((obj) => {
             if (obj == null) {
@@ -263,7 +270,6 @@ async function getOneProductWithoutQuantity(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 async function getAllProductDix(req, res) {
-
     await db.Product.findAll({
         include: [
             {
@@ -390,7 +396,6 @@ async function getAllProductWithoutQuantity(req, res) {
 }
 
 async function getLastTenProduct(req, res) {
-
     await db.Product.findAll({
         include: [
             {
@@ -399,7 +404,6 @@ async function getLastTenProduct(req, res) {
         ],
         order: [['createdAt', 'DESC']],
         limit: 10
-
     })
         .then((obj) => {
             if (obj == null) {
@@ -415,7 +419,6 @@ async function getLastTenProduct(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 async function getLastTenProductWithoutQuantity(req, res) {
-
     await db.Product.findAll({
         attributes: { exclude: ['quantity'] },
         include: [
@@ -425,7 +428,6 @@ async function getLastTenProductWithoutQuantity(req, res) {
         ],
         order: [['createdAt', 'DESC']],
         limit: 10
-
     })
         .then((obj) => {
             if (obj == null) {
@@ -441,10 +443,8 @@ async function getLastTenProductWithoutQuantity(req, res) {
         .catch((err) => res.status(400).json('Error getting ' + err.message));
 }
 
-
 async function getAllProductByName(req, res) {
     try {
-
         const products = await db.Product.findAll({
             where: { name: req.query.name },
 
@@ -453,7 +453,7 @@ async function getAllProductByName(req, res) {
                     model: db.Image
                 }
             ],
-            order: [['createdAt', 'DESC']],
+            order: [['createdAt', 'DESC']]
         });
 
         if (products.length === 0) {
@@ -472,7 +472,6 @@ async function getAllProductByName(req, res) {
 
 async function getAllProductByNameWithoutQuantity(req, res) {
     try {
-
         const products = await db.Product.findAll({
             where: { name: req.query.name },
             attributes: { exclude: ['quantity'] },
@@ -482,7 +481,7 @@ async function getAllProductByNameWithoutQuantity(req, res) {
                     model: db.Image
                 }
             ],
-            order: [['createdAt', 'DESC']],
+            order: [['createdAt', 'DESC']]
         });
 
         if (products.length === 0) {
@@ -499,45 +498,39 @@ async function getAllProductByNameWithoutQuantity(req, res) {
     }
 }
 
-
-
-
-
 async function getAllProductByCategory(req, res) {
     const { categories } = req.params;
-    console.log("categories", categories);
+    console.log('categories', categories);
 
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
-
 
     // const categories = [3, 2]
 
     try {
-        const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+        const categoryIds = categories.split(','); // Convert categories string to an array of category IDs
 
         const products = await db.Product_category.findAll({
             attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
-            include: [{
-                model: db.Product, include: [{ model: db.Image }],
-                // raw: true,
-
-            }],
+            include: [
+                {
+                    model: db.Product,
+                    include: [{ model: db.Image }]
+                    // raw: true,
+                }
+            ],
             order: [['createdAt', 'DESC']]
         });
-
 
         if (!products || products.length === 0) {
             return res.status(400).json([]);
         }
-        var clearData = await products.map(proudt => {
-
-            return (proudt.Product)
-
-        })
+        var clearData = await products.map((proudt) => {
+            return proudt.Product;
+        });
         return res.status(200).json({
             status: 'success',
-            data: await clearData.filter(proudt => proudt != null),
+            data: await clearData.filter((proudt) => proudt != null)
         });
     } catch (error) {
         console.error('Error getting products:', error);
@@ -547,40 +540,38 @@ async function getAllProductByCategory(req, res) {
 
 async function getAllProductByCategoryWithoutQuantity(req, res) {
     const { categories } = req.params;
-    console.log("categories", categories);
+    console.log('categories', categories);
 
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
-
 
     // const categories = [3, 2]
 
     try {
-        const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+        const categoryIds = categories.split(','); // Convert categories string to an array of category IDs
 
         const products = await db.Product_category.findAll({
             attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
-            include: [{
-                model: db.Product, attributes: { exclude: ['quantity'] },
-                include: [{ model: db.Image }],
-                // raw: true,
-
-            }],
+            include: [
+                {
+                    model: db.Product,
+                    attributes: { exclude: ['quantity'] },
+                    include: [{ model: db.Image }]
+                    // raw: true,
+                }
+            ],
             order: [['createdAt', 'DESC']]
         });
-
 
         if (!products || products.length === 0) {
             return res.status(400).json([]);
         }
-        var clearData = await products.map(proudt => {
-
-            return (proudt.Product)
-
-        })
+        var clearData = await products.map((proudt) => {
+            return proudt.Product;
+        });
         return res.status(200).json({
             status: 'success',
-            data: await clearData.filter(proudt => proudt != null),
+            data: await clearData.filter((proudt) => proudt != null)
         });
     } catch (error) {
         console.error('Error getting products:', error);
@@ -588,27 +579,16 @@ async function getAllProductByCategoryWithoutQuantity(req, res) {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
 async function getAllBrandByCategory(req, res) {
     const { categories } = req.params;
-    console.log("categories", categories);
+    console.log('categories', categories);
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
     // const categories = [3, 2]
     try {
-        const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+        const categoryIds = categories.split(','); // Convert categories string to an array of category IDs
         const cat = await db.Category.findAll({
-            where: { id: { [db.Sequelize.Op.in]: categoryIds } },
+            where: { id: { [db.Sequelize.Op.in]: categoryIds } }
         });
 
         if (!cat) {
@@ -618,25 +598,26 @@ async function getAllBrandByCategory(req, res) {
         const brands = await db.Product_category.findAll({
             attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
-            include: [{
-                model: db.Product, attributes: ['brand'],
-                // raw: true,
-                group: ['brand'],
-            }],
+            include: [
+                {
+                    model: db.Product,
+                    attributes: ['brand'],
+                    // raw: true,
+                    group: ['brand']
+                }
+            ]
         });
 
         if (!brands || brands.length === 0) {
             return res.status(400).json([]);
         }
 
-        var clearData = await brands.map(proudt => {
-
-            return (proudt.Product)
-
-        })
+        var clearData = await brands.map((proudt) => {
+            return proudt.Product;
+        });
         return res.status(200).json({
             status: 'success',
-            data: await clearData.filter(proudt => proudt != null),
+            data: await clearData.filter((proudt) => proudt != null)
         });
     } catch (error) {
         console.error('Error getting brands:', error);
@@ -644,19 +625,16 @@ async function getAllBrandByCategory(req, res) {
     }
 }
 
-
-
-
 async function getAllProductByCategoryTopDix(req, res) {
     const { categories } = req.params;
-    console.log("categories", categories);
+    console.log('categories', categories);
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
     // const categories = [3, 2]
     try {
-        const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+        const categoryIds = categories.split(','); // Convert categories string to an array of category IDs
         const cat = await db.Category.findAll({
-            where: { id: { [db.Sequelize.Op.in]: categoryIds } },
+            where: { id: { [db.Sequelize.Op.in]: categoryIds } }
         });
 
         if (!cat) {
@@ -666,11 +644,12 @@ async function getAllProductByCategoryTopDix(req, res) {
         const p = await db.Product_category.findAll({
             attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
-            include: [{
-                model: db.Product, include: [{ model: db.Image }],                 // raw: true,
-
-
-            }],
+            include: [
+                {
+                    model: db.Product,
+                    include: [{ model: db.Image }] // raw: true,
+                }
+            ],
 
             limit: 10
         });
@@ -679,14 +658,12 @@ async function getAllProductByCategoryTopDix(req, res) {
             return res.status(400).json({ error: [] });
         }
 
-        var clearData = await p.map(proudt => {
-
-            return (proudt.Product)
-
-        })
+        var clearData = await p.map((proudt) => {
+            return proudt.Product;
+        });
         return res.status(200).json({
             status: 'success',
-            data: await clearData.filter(proudt => proudt != null),
+            data: await clearData.filter((proudt) => proudt != null)
         });
     } catch (error) {
         console.error('Error getting products:', error);
@@ -696,14 +673,14 @@ async function getAllProductByCategoryTopDix(req, res) {
 
 async function getAllProductByCategoryTopDixWithoutQuantity(req, res) {
     const { categories } = req.params;
-    console.log("categories", categories);
+    console.log('categories', categories);
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
     // const categories = [3, 2]
     try {
-        const categoryIds = categories.split(","); // Convert categories string to an array of category IDs
+        const categoryIds = categories.split(','); // Convert categories string to an array of category IDs
         const cat = await db.Category.findAll({
-            where: { id: { [db.Sequelize.Op.in]: categoryIds } },
+            where: { id: { [db.Sequelize.Op.in]: categoryIds } }
         });
 
         if (!cat) {
@@ -713,11 +690,13 @@ async function getAllProductByCategoryTopDixWithoutQuantity(req, res) {
         const p = await db.Product_category.findAll({
             attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
             where: { CategoryId: { [db.Sequelize.Op.in]: categoryIds } },
-            include: [{
-                model: db.Product, attributes: { exclude: ['quantity'] }, include: [{ model: db.Image }],                 // raw: true,
-
-
-            }],
+            include: [
+                {
+                    model: db.Product,
+                    attributes: { exclude: ['quantity'] },
+                    include: [{ model: db.Image }] // raw: true,
+                }
+            ],
 
             limit: 10
         });
@@ -726,24 +705,18 @@ async function getAllProductByCategoryTopDixWithoutQuantity(req, res) {
             return res.status(400).json({ error: [] });
         }
 
-        var clearData = await p.map(proudt => {
-
-            return (proudt.Product)
-
-        })
+        var clearData = await p.map((proudt) => {
+            return proudt.Product;
+        });
         return res.status(200).json({
             status: 'success',
-            data: await clearData.filter(proudt => proudt != null),
+            data: await clearData.filter((proudt) => proudt != null)
         });
     } catch (error) {
         console.error('Error getting products:', error);
         return res.status(400).json({ error: error.message });
     }
 }
-
-
-
-
 
 async function updateProduct(req, res) {
     const productId = req.params.id; // Assuming the product ID is part of the URL
@@ -818,9 +791,6 @@ async function updateProduct(req, res) {
     }
 }
 
-
-
-
 async function updateCategoryOfProduct(req, res) {
     categories = req.body.category;
     // console.log(req.body.category);
@@ -844,14 +814,12 @@ async function updateCategoryOfProduct(req, res) {
                 res.status(200).send({ res: 'category updated', data: categoriesProduct });
             })
             .catch((err) => res.status(400).json('Error getting ' + err.message));
-
     }
 }
 
 async function deleteCategoryOfProduct(req, res) {
     if (!req.body.category_id) return res.status(400).send({ err: 'categoryId is empty' });
     if (!req.body.product_id) return res.status(400).send({ err: 'productId is empty' });
-
 
     db.Product_category.findOne({
         where: {
@@ -867,7 +835,6 @@ async function deleteCategoryOfProduct(req, res) {
                     res.status(200).send({ res: 'category deleted' });
                 })
                 .catch((err) => res.status(400).json('Error getting ' + err.message));
-
         }
     });
 }
@@ -903,9 +870,7 @@ async function deleteCategoryOfProduct(req, res) {
 //     }
 // }
 
-
 async function getTopSellingProducts(req, res) {
-
     try {
         const topSellingProductIds = await db.OrderLine.findAll({
             attributes: [
@@ -917,8 +882,7 @@ async function getTopSellingProducts(req, res) {
             limit: 10
         });
 
-        const productIds = topSellingProductIds.map(product => product.ProductId);
-
+        const productIds = topSellingProductIds.map((product) => product.ProductId);
 
         const topSellingProduct = await db.Product.findAll({
             where: {
@@ -931,18 +895,14 @@ async function getTopSellingProducts(req, res) {
                     model: db.Image
                 }
             ]
-        })
-        var clearData = await topSellingProduct.map(proudt => {
-
-            return (proudt.Product)
-
-        })
+        });
+        var clearData = await topSellingProduct.map((proudt) => {
+            return proudt.Product;
+        });
         return res.status(200).json({
             status: 'success',
-            data: await clearData.filter(proudt => proudt != null),
+            data: await clearData.filter((proudt) => proudt != null)
         });
-
-
     } catch (error) {
         console.error('Error retrieving top-selling products:', error);
         throw error;
@@ -950,7 +910,6 @@ async function getTopSellingProducts(req, res) {
 }
 
 async function getTopSellingProductsWithoutQuantity(req, res) {
-
     try {
         const topSellingProductIds = await db.OrderLine.findAll({
             attributes: [
@@ -962,11 +921,10 @@ async function getTopSellingProductsWithoutQuantity(req, res) {
             limit: 10
         });
 
-        const productIds = topSellingProductIds.map(product => product.ProductId);
-
+        const productIds = topSellingProductIds.map((product) => product.ProductId);
 
         const topSellingProduct = await db.Product.findAll({
-            attributes: { exclude: ['CategoryId', 'ProductId', 'id',] },
+            attributes: { exclude: ['CategoryId', 'ProductId', 'id'] },
 
             where: {
                 id: {
@@ -978,28 +936,19 @@ async function getTopSellingProductsWithoutQuantity(req, res) {
                     model: db.Image
                 }
             ]
-        })
-        var clearData = await topSellingProduct.map(proudt => {
-
-            return (proudt.Product)
-
-        })
+        });
+        var clearData = await topSellingProduct.map((proudt) => {
+            return proudt.Product;
+        });
         return res.status(200).json({
             status: 'success',
-            data: await clearData.filter(proudt => proudt != null),
+            data: await clearData.filter((proudt) => proudt != null)
         });
-
-
     } catch (error) {
         console.error('Error retrieving top-selling products:', error);
         throw error;
     }
 }
-
-
-
-
-
 
 module.exports = {
     getAllProduct,
@@ -1019,12 +968,7 @@ module.exports = {
     getLastTenProductWithoutQuantity,
     getAllProductByNameWithoutQuantity,
     getAllProductByCategoryWithoutQuantity,
-    getTopSellingProductsWithoutQuantity, getAllProductByCategoryTopDixWithoutQuantity
-    , getOneProductWithoutQuantity
-
+    getTopSellingProductsWithoutQuantity,
+    getAllProductByCategoryTopDixWithoutQuantity,
+    getOneProductWithoutQuantity
 };
-
-
-
-
-
