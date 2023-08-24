@@ -80,7 +80,7 @@ app.use(`${api}/orders`, ordersRoutes);
 app.use(`${api}/orderslines`, ordersLinesRoutes);
 
 db.sequelize
-    .sync({ alter: true, force: false })
+    .sync({ alter: false, force: false })
     .then(() => {
         app.listen(3200, () => {
             console.log('server running in port 3000');
