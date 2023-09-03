@@ -9,7 +9,7 @@ route.get('/', orderController.getAllOrdersPagination)
 route.get('/soft', orderController.getAllSoftOrders)
 route.get('/:id', orderController.getOneOrder)
 // route.get('/:id', orderController.getOneOrderWithProduct)
-route.delete('/:id', orderController.deleteOrder)
+// route.delete('/:id', orderController.deleteOrder)
 route.get('/restore/:id', orderController.RestoreOneOrder)
 route.get('/customer/:id', orderController.getOrderByCustomer)
 

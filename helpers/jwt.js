@@ -28,7 +28,7 @@ function authJwt() {
 
             { url: new RegExp(`${api}/products(.*)`), methods: ['GET', 'OPTIONS'] },
             { url: new RegExp(`${api}/category(.*)`), methods: ['GET', 'OPTIONS'] },
-            { url: new RegExp(`${api}/orders(.*)`), methods: ['GET', 'OPTIONS', 'POST'] },
+            { url: new RegExp(`${api}/orders(.*)`), methods: ['GET', 'OPTIONS'] },
             `${api}/customer/login`,
             `${api}/customer/register`,
             `${api}/user/login`,

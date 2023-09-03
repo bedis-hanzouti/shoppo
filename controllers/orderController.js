@@ -87,11 +87,11 @@ async function addNewOrder0(req, res) {
 }
 
 async function addNewOrder(req, res) {
-
+    const user = req.user.user
     try {
         varp = [];
         const orderData = req.body;
-        const customerId = orderData.customer_id;
+        const customerId = user.id;
         const orderLines = orderData.orderLines;
 
         const customer = await db.Customer.findOne({

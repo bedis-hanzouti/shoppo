@@ -574,3 +574,11 @@
 {"level":"info","message":{"method":"PUT","responseTime":"92ms","status":200,"timestamp":"2023-09-03T20:26:01.644Z","url":"/api/v1/products/5"}}
 {"level":"info","message":{"method":"GET","responseTime":"16ms","status":200,"timestamp":"2023-09-03T20:26:06.572Z","url":"/api/v1/products/"}}
 {"level":"info","message":{"method":"DELETE","responseTime":"7ms","status":401,"timestamp":"2023-09-03T20:27:22.378Z","url":"/api/v1/user/3"}}
+{"level":"info","message":{"method":"POST","responseTime":"20ms","status":401,"timestamp":"2023-09-03T20:41:13.100Z","url":"/api/v1/orders"}}
+{"level":"info","message":{"method":"POST","responseTime":"216ms","status":200,"timestamp":"2023-09-03T20:41:36.976Z","url":"/api/v1/customer/login"}}
+{"level":"info","message":{"method":"POST","responseTime":"140ms","status":500,"timestamp":"2023-09-03T20:41:54.253Z","url":"/api/v1/orders/"}}
+{"level":"info","message":{"method":"POST","responseTime":"100ms","status":201,"timestamp":"2023-09-03T20:42:36.608Z","url":"/api/v1/orders/"}}
+{"level":"info","message":{"method":"GET","responseTime":"3ms","status":500,"timestamp":"2023-09-03T20:42:49.451Z","url":"/api/v1/customer/one"}}
+{"level":"info","message":{"method":"POST","responseTime":"330ms","status":200,"timestamp":"2023-09-03T20:43:19.888Z","url":"/api/v1/customer/register"}}
+{"level":"info","message":{"method":"POST","responseTime":"113ms","status":200,"timestamp":"2023-09-03T20:43:28.916Z","url":"/api/v1/customer/login"}}
+{"level":"info","message":{"method":"POST","responseTime":"125ms","status":201,"timestamp":"2023-09-03T20:43:45.307Z","url":"/api/v1/orders/"}}
