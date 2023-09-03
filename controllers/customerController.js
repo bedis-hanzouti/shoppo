@@ -18,10 +18,18 @@ async function login(req, res) {
     const match = await bcrypt.compareSync(req.body.password, user.password)
     // console.log({ match: match });
     if (user && match) {
-        // console.log(user);
+        const tokenData = {
+            id: user.id,
+
+            city: user.city,
+            status: user.status,
+            activity: user.activity,
+
+            login: user.login,
+        }
         const token = jwt.sign(
             {
-                id: user.id,
+                user: tokenData,
 
                 // isAdmin: userModel.isAdmin
             },
@@ -108,7 +116,7 @@ async function register(req, res) {
             city: req.body.city,
             status: req.body.status,
             activity: req.body.activity,
-            login: req.body.login,
+            login: false,
             phonenumber: req.body.phonenumber,
             password: hashedPassword
         });
@@ -128,9 +136,18 @@ async function register(req, res) {
 
             if (user && match) {
                 const secret = process.env.secret;
+                const tokenData = {
+                    id: user.id,
+
+                    city: user.city,
+                    status: user.status,
+                    activity: user.activity,
+
+                    login: user.login,
+                }
                 const token = jwt.sign(
                     {
-                        id: user.id,
+                        user: tokenData,
 
                         // isAdmin: userModel.isAdmin
                     },
@@ -178,9 +195,10 @@ async function deletUser(req, res) {
 
 async function getOneUser(req, res) {
 
-    // console.log(req.user);
+    const user = req.user.user
     try {
-        const obj = await db.Customer.findOne({ where: { id: req.user.id } });
+
+        const obj = await db.Customer.findOne({ where: { id: user.id } });
         if (!obj) {
             return res.status(400).json({});
         }
@@ -284,11 +302,11 @@ async function changerPasswordCustomer(req, res, next) {
 
 async function updateUser(req, res) {
 
-
+    const user = req.user.user
 
     await db.Customer.findOne({
         where: {
-            id: req.params.id
+            id: user.id
         }
     })
         .then(async (obj) => {
@@ -302,8 +320,8 @@ async function updateUser(req, res) {
 
             obj.status = req.body.status || obj.status;
             obj.activity = req.body.activity || obj.activity;
-            obj.login = req.body.login || obj.login;
-            // obj.password = obj.password;
+
+
             await obj.save();
             res.status(200).send(obj);
         })
@@ -314,11 +332,11 @@ async function updateUser(req, res) {
 
 async function updateUserAdresse(req, res) {
 
-
+    const user = req.user.user
 
     await db.Customer.findOne({
         where: {
-            id: req.params.id
+            id: user.id
         }
     })
         .then(async (obj) => {

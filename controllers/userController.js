@@ -19,11 +19,18 @@ async function login(req, res) {
     const match = await bcrypt.compareSync(req.body.password, user.password)
     // console.log({ match: match });
     if (user && match) {
-        // console.log(user);
+        const tokenData = {
+            id: user.id,
+
+            city: user.city,
+            status: user.status,
+            activity: user.activity,
+
+            login: user.login,
+        }
         const token = jwt.sign(
             {
-                id: user.id,
-
+                user: tokenData,
                 // isAdmin: userModel.isAdmin
             },
             secret,
@@ -62,7 +69,7 @@ async function register(req, res) {
             city: req.body.city,
             status: req.body.status,
             activity: req.body.activity,
-            login: req.body.login,
+            login: true,
             phonenumber: req.body.phonenumber,
             password: hashedPassword
         })
@@ -84,9 +91,18 @@ async function register(req, res) {
 
             if (user && match) {
                 const secret = process.env.secret;
+                const tokenData = {
+                    id: user.id,
+
+                    city: user.city,
+                    status: user.status,
+                    activity: user.activity,
+
+                    login: user.login,
+                }
                 const token = jwt.sign(
                     {
-                        id: user.id,
+                        user: tokenData,
 
                         // isAdmin: userModel.isAdmin
                     },
@@ -135,9 +151,9 @@ async function deletUser(req, res) {
 }
 
 async function getOneUser(req, res) {
-    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+    const user = req.user.user
 
-    await db.User.findOne({ where: { id: req.params.id } })
+    await db.User.findOne({ where: { id: user.id } })
         .then((obj) => {
             if (obj == null) {
                 res.status(400).json({});
@@ -218,16 +234,11 @@ async function getAllSoftUser(req, res) {
 
 
 async function updateUser(req, res) {
-    // console.log(req.params.id);
-    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
-    // const validationResult = userSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
 
+    const user = req.user.user
     await db.User.findOne({
         where: {
-            id: req.params.id
+            id: user.id
         }
     })
         .then(async (obj) => {
@@ -241,8 +252,8 @@ async function updateUser(req, res) {
 
             obj.status = req.body.status || obj.status;
             obj.activity = req.body.activity || obj.activity;
-            obj.login = req.body.login || obj.login;
-            // obj.password = obj.password;
+
+
             await obj.save();
             res.status(200).send(obj);
         })
@@ -253,10 +264,10 @@ async function updateUser(req, res) {
 
 async function updateUserAdresse(req, res) {
 
-
+    const user = req.user.user
     await db.User.findOne({
         where: {
-            id: req.params.id
+            id: user.id
         }
     })
         .then(async (obj) => {

@@ -4,16 +4,18 @@ const express = require('express')
 const route = express.Router()
 const multer = require('multer');
 const configMedia = require('../config/multer')
+const { isAdmin } = require('../helpers/jwt');
+
 
 
 const productController = require('../controllers/productController')
 
-route.post('/', configMedia.uploadOptions.array('images', 6), productController.addProduct)
+route.post('/', isAdmin, configMedia.uploadOptions.array('images', 6), productController.addProduct)
 // route.post('/', configMedia.uploadOptions.array('images', 5), productController.addProduct)
 // route.post('/',configMedia.uploadOptions.array('image',5),productController.addProduct)
 
-route.put('/:id', configMedia.uploadOptions.array('images', 6), productController.updateProduct)
-route.put('/update/:id', productController.updateCategoryOfProduct)
+route.put('/:id', isAdmin, configMedia.uploadOptions.array('images', 6), productController.updateProduct)
+route.put('/update/:id', isAdmin, productController.updateCategoryOfProduct)
 
 route.get('/topselling', productController.getTopSellingProducts)
 route.get('/frontOffice/topselling', productController.getTopSellingProductsWithoutQuantity)
@@ -32,7 +34,7 @@ route.get('/frontOffice/topdix/category/:categories', productController.getAllPr
 route.get('/brand/:categories', productController.getAllBrandByCategory)
 route.get('/category/:categories', productController.getAllProductByCategory)
 route.get('/frontOffice/category/:categories', productController.getAllProductByCategoryWithoutQuantity)
-route.delete('/:id', productController.deletProduct)
+route.delete('/:id', isAdmin, productController.deletProduct)
 
 module.exports = route
 

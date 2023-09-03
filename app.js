@@ -9,6 +9,7 @@ const db = require('./models');
 var path = require('path');
 const figlet = require('figlet');
 
+
 db.Sequelize = Sequelize;
 
 const logger = winston.createLogger({
@@ -23,7 +24,7 @@ const logger = winston.createLogger({
 
 const cors = require('cors');
 require('dotenv/config');
-const authJwt = require('./helpers/jwt');
+const { authJwt } = require('./helpers/jwt');
 const errorHandler = require('./helpers/error-handler');
 
 // app.use(userMiddleware);
@@ -56,7 +57,7 @@ app.use((req, res, next) => {
 //middleware
 app.use(express.json());
 //app.use(morgan('tiny'));
-// app.use(authJwt());
+app.use(authJwt());
 app.use('/public/uploads', express.static(__dirname + '/public/uploads'));
 // app.use(errorHandler);
 

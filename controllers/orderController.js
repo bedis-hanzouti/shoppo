@@ -319,8 +319,9 @@ async function getOneOrderWithProduct(req, res) {
 }
 
 async function getOrderByCustomer(req, res) {
+    const user = req.user.user
     try {
-        const customerId = req.params.id;
+        const customerId = user.id;
         // console.log(customerId);
 
         const orders = await db.Order.findAll({
