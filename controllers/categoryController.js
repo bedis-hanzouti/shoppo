@@ -58,7 +58,6 @@ async function addCategory(req, res) {
         }
         else {
             await uploadFilee(file).then(async (obj) => {
-                // console.log(validationResult);
 
 
 
@@ -171,7 +170,7 @@ const paginate = (query, schema) => {
     delete schema.page;
 
     Object.keys(schema).forEach((key) => {
-        console.log(key);
+        // console.log(key);
         schema[key] && query[key] ? (where[key] = query[key]) : null;
     });
     return {
@@ -202,10 +201,7 @@ async function RestoreOneCategory(req, res) {
 }
 
 async function updateCategory(req, res) {
-    // const validationResult = categorSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
+
     const file = req.file;
 
     if (file) {

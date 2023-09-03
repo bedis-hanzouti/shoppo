@@ -19,7 +19,7 @@ const paginate = (query, schema) => {
     delete schema.page;
 
     Object.keys(schema).forEach((key) => {
-        console.log(key);
+        // console.log(key);
         schema[key] && query[key] ? (where[key] = query[key]) : null;
     });
     return {

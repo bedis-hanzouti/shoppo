@@ -502,7 +502,7 @@ async function getAllProductByNameWithoutQuantity(req, res) {
 
 async function getAllProductByCategory(req, res) {
     const { categories } = req.params;
-    console.log('categories', categories);
+    // console.log('categories', categories);
 
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
@@ -542,7 +542,7 @@ async function getAllProductByCategory(req, res) {
 
 async function getAllProductByCategoryWithoutQuantity(req, res) {
     const { categories } = req.params;
-    console.log('categories', categories);
+    // console.log('categories', categories);
 
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
@@ -583,7 +583,7 @@ async function getAllProductByCategoryWithoutQuantity(req, res) {
 
 async function getAllBrandByCategory(req, res) {
     const { categories } = req.params;
-    console.log('categories', categories);
+    // console.log('categories', categories);
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
     // const categories = [3, 2]
@@ -629,7 +629,7 @@ async function getAllBrandByCategory(req, res) {
 
 async function getAllProductByCategoryTopDix(req, res) {
     const { categories } = req.params;
-    console.log('categories', categories);
+    // console.log('categories', categories);
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
     // const categories = [3, 2]
@@ -675,7 +675,7 @@ async function getAllProductByCategoryTopDix(req, res) {
 
 async function getAllProductByCategoryTopDixWithoutQuantity(req, res) {
     const { categories } = req.params;
-    console.log('categories', categories);
+    // console.log('categories', categories);
     // if (!categories) return res.status(400).send({ err: 'categoriesId is empty' });
 
     // const categories = [3, 2]
@@ -724,7 +724,7 @@ async function updateProduct(req, res) {
     const productId = req.params.id; // Assuming the product ID is part of the URL
     const files = req.files;
 
-    console.log(productId);
+    // console.log(productId);
 
     try {
         const product = await db.Product.findOne({ where: { id: productId } });
@@ -805,7 +805,7 @@ async function updateCategoryOfProduct(req, res) {
                 var categoriesProduct = [];
 
                 await categories.forEach((category) => {
-                    console.log(category);
+                    // console.log(category);
                     categoriesProduct.push(
                         db.Product_category.create({
                             CategoryId: category.id,

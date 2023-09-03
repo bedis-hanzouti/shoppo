@@ -10,15 +10,16 @@ async function login(req, res) {
     if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
 
     const user = await db.User.findOne({ where: { email: req.body.email }, attributes: { include: ['password'] } });
-    console.log({ body: user.password });
+    // console.log("user ", user);
+    // console.log({ body: user.password });
     const secret = process.env.secret || '123456azerty';
     if (!user) {
         return res.status(400).send({ err: 'The userModel not found' });
     }
     const match = await bcrypt.compareSync(req.body.password, user.password)
-    console.log({ match: match });
+    // console.log({ match: match });
     if (user && match) {
-        console.log(user);
+        // console.log(user);
         const token = jwt.sign(
             {
                 id: user.id,
@@ -28,8 +29,19 @@ async function login(req, res) {
             secret,
             { expiresIn: '1d' }
         );
+        const clearUser = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            city: user.city,
+            status: user.status,
+            activity: user.activity,
+            phonenumber: user.phonenumber
+        }
 
-        res.status(200).send({ user: user.email, token: token });
+
+
+        res.status(200).send({ user: clearUser, token: token });
     } else {
         res.status(400).send({ err: 'password is wrong!' });
     }
@@ -240,11 +252,6 @@ async function updateUser(req, res) {
 }
 
 async function updateUserAdresse(req, res) {
-    // const validationResult = categorSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
 
 
     await db.User.findOne({

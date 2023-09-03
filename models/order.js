@@ -20,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
             total_discount: { type: DataTypes.DOUBLE, allowNull: false },
             quantity: { type: DataTypes.INTEGER, allowNull: false },
             shipping: { type: DataTypes.INTEGER, allowNull: true },
+            rank: { type: DataTypes.INTEGER, allowNull: false },
             discount: { type: DataTypes.DOUBLE, allowNull: false, defaultValue: 0 }
         },
         {

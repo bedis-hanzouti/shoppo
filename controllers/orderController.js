@@ -74,7 +74,7 @@ async function addNewOrder0(req, res) {
                 factureItems.push(factureItem);
             }
         }
-        console.log('customer_email', customer.email);
+        // console.log('customer_email', customer.email);
 
         await sendEmail(customer.email, 'Order Confirmation', customer.name, factureItems);
 
@@ -87,12 +87,7 @@ async function addNewOrder0(req, res) {
 }
 
 async function addNewOrder(req, res) {
-    // const validationResult = orderSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
 
-    // const t = await db.sequelize.transaction();
     try {
         varp = [];
         const orderData = req.body;
@@ -107,19 +102,34 @@ async function addNewOrder(req, res) {
         });
 
         if (!customer) {
-            // await t.rollback();
+
             return res.status(400).json({ error: 'CUSTOMER NOT FOUND' });
         }
 
+        const highestRankOrder = await db.Order.findOne({
+            attributes: [
+                [db.sequelize.fn('MAX', db.sequelize.col('rank')), 'maxRank']
+            ],
+            where: {
+                CustomerId: customer.id
+            }
+        });
+
+
+
+        const newRank = ((highestRankOrder && highestRankOrder.get('maxRank')) || 0) + 1;
+
+
         const order = await db.Order.create({
             // pending: Sequelize.fn('now'),
+            rank: newRank,
             shipping: orderData.shipping,
             total: orderData.total,
             discount: orderData.discount || 0,
             quantity: orderData.quantity,
             total_discount: orderData.total_discount,
             CustomerId: customer.id
-            // transaction: t,
+
         });
         const factureItems = [];
         // Create the order lines
@@ -161,7 +171,7 @@ async function addNewOrder(req, res) {
                 factureItems.push(factureItem);
             }
         }
-        console.log('customer_email', customer.email);
+        // console.log('customer_email', customer.email);
 
         await sendEmail(customer.email, 'Order Confirmation', customer.name, factureItems);
 
@@ -174,11 +184,6 @@ async function addNewOrder(req, res) {
 }
 
 async function updateOrder(req, res) {
-    // const validationResult = orderSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    // if (!req.params.id) return res.status(400).send({ err: 'orderId is empty' });
 
     try {
         const orderId = req.params.id;
@@ -316,7 +321,7 @@ async function getOneOrderWithProduct(req, res) {
 async function getOrderByCustomer(req, res) {
     try {
         const customerId = req.params.id;
-        console.log(customerId);
+        // console.log(customerId);
 
         const orders = await db.Order.findAll({
             where: {

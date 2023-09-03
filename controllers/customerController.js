@@ -10,15 +10,15 @@ const customerSchema = require('../config/joi_validation/customerSchema')
 async function login(req, res) {
     if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
     const user = await db.Customer.findOne({ where: { email: req.body.email }, attributes: { include: ['password'] } });
-    console.log({ body: user.password });
+    // console.log({ body: user.password });
     const secret = process.env.secret || '123456azerty';
     if (!user) {
         return res.status(400).send({ err: 'The userModel not found' });
     }
     const match = await bcrypt.compareSync(req.body.password, user.password)
-    console.log({ match: match });
+    // console.log({ match: match });
     if (user && match) {
-        console.log(user);
+        // console.log(user);
         const token = jwt.sign(
             {
                 id: user.id,
@@ -28,19 +28,24 @@ async function login(req, res) {
             secret,
             { expiresIn: '1d' }
         );
+        const clearUser = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            city: user.city,
+            status: user.status,
+            activity: user.activity,
+            phonenumber: user.phonenumber
+        }
 
-        res.status(200).send({ user: user, token: token });
+
+        res.status(200).send({ user: clearUser, token: token });
     } else {
         res.status(400).send({ err: 'password is wrong!' });
     }
 }
 
 async function register0(req, res) {
-    // const validationResult = customerSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    // if (!req.body.email) return res.status(400).send({ err: 'email is empty' });
 
     const olduser = await db.Customer.findOne({ where: { email: req.body.email } });
     if (olduser) {
@@ -60,8 +65,8 @@ async function register0(req, res) {
 
             if (!obj.email) return res.status(400).send({ err: 'email is empty' });
             const user = await db.Customer.findOne({ where: { email: obj.email }, attributes: { include: ['password'] } });
-            console.log({ body: obj.password });
-            console.log({ user: user.password });
+            // console.log({ body: obj.password });
+            // console.log({ user: user.password });
             const secret = process.env.secret;
             if (!user) {
                 return res.status(400).send({ err: 'The userModel not found' });
@@ -69,7 +74,7 @@ async function register0(req, res) {
             const match = await bcrypt.compareSync(obj.password, user.password)
             console.log({ match: match });
             if (user && match) {
-                console.log(user);
+                // console.log(user);
                 const token = jwt.sign(
                     {
                         id: user.id,
@@ -173,7 +178,7 @@ async function deletUser(req, res) {
 
 async function getOneUser(req, res) {
 
-    console.log(req.user);
+    // console.log(req.user);
     try {
         const obj = await db.Customer.findOne({ where: { id: req.user.id } });
         if (!obj) {
@@ -278,11 +283,7 @@ async function changerPasswordCustomer(req, res, next) {
 };
 
 async function updateUser(req, res) {
-    // const validationResult = categorSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
 
 
     await db.Customer.findOne({
@@ -312,11 +313,7 @@ async function updateUser(req, res) {
 }
 
 async function updateUserAdresse(req, res) {
-    // const validationResult = categorSchema.validate(req.body);
-    // // console.log(validationResult);
-    // if (validationResult.error)
-    //     return res.status(404).send({ error: validationResult.error.details[0].message });
-    // if (!req.params.id) return res.status(400).send({ err: 'id is empty' });
+
 
 
     await db.Customer.findOne({
@@ -353,7 +350,7 @@ const paginate = (query, schema) => {
     delete schema.page;
 
     Object.keys(schema).forEach((key) => {
-        console.log(key)
+        // console.log(key)
         schema[key] && query[key] ? (where[key] = query[key]) : null;
     });
     return {

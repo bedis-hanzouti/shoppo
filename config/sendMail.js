@@ -2,7 +2,7 @@ const nodemailer = require("nodemailer");
 const fs = require('fs');
 const { jsPDF } = require('jspdf');
 const sendEmail = async (email, subject, name, factureItems) => {
-  console.log("email",email);
+  // console.log("email", email);
   try {
     const doc = new jsPDF();
     var total = 0
@@ -118,10 +118,10 @@ const sendEmail = async (email, subject, name, factureItems) => {
     });
 
 
-
+    // to: [email, 'attia00018@gmail.com'],
     var mailOptions = {
       from: process.env.USER,
-      to: [email, 'attia00018@gmail.com'],
+      to: [email],
       subject: "email from H3B Store about " + subject,
       html: `<!DOCTYPE html>
     <html lang="en">
